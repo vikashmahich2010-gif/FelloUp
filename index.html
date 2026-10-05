@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#2F5BFF"><title>FelloUp</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F4F8;--card:#fff;--ink:#14182B;--mute:#6B7288;--line:#E1E5EE;--blue:#2F5BFF;--lime:#C8F169;--red:#D93B4A;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1220;--card:#181C30;--ink:#EEF0F8;--mute:#9AA1BA;--line:#2A2F4A}}
+:root[data-theme="dark"]{--bg:#0F1220;--card:#181C30;--ink:#EEF0F8;--mute:#9AA1BA;--line:#2A2F4A}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.4}
+#app{max-width:480px;margin:0 auto;padding:16px 16px 90px;min-height:100vh}
+h1{font-size:30px;font-weight:800;margin:4px 0 2px;letter-spacing:-.5px}
+h2{font-size:20px;font-weight:800;margin:0 0 12px}
+p.sub{color:var(--mute);margin:0 0 18px}
+label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:11px 12px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2.5px solid var(--blue);outline-offset:1px}
+textarea{min-height:80px;resize:vertical}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn{display:block;width:100%;border:0;border-radius:14px;background:var(--blue);color:#fff;font:inherit;font-weight:800;padding:14px;margin-top:20px;cursor:pointer}
+.btn.sm{display:inline-block;width:auto;padding:9px 16px;margin:0;font-size:14px;border-radius:99px}
+.btn.alt{background:var(--lime);color:#14182B}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.no{background:transparent;color:var(--red);border:1.5px solid var(--red)}
+.err{color:var(--red);font-size:14px;margin-top:10px;min-height:18px}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.av{width:42px;height:42px;border-radius:50%;background:var(--lime);color:#14182B;display:grid;place-items:center;font-weight:800;object-fit:cover;flex:none}
+.sq-h{display:flex;gap:12px;align-items:center}
+.emo{width:46px;height:46px;border-radius:14px;background:var(--lime);display:grid;place-items:center;font-size:24px;flex:none}
+.sq-t{font-weight:800;font-size:17px}
+.meta{color:var(--mute);font-size:14px;margin:2px 0}
+.bar{height:6px;background:var(--line);border-radius:9px;overflow:hidden;margin:12px 0 8px}
+.bar i{display:block;height:100%;background:var(--blue)}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tag{font-size:13px;font-weight:600;color:var(--mute)}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1.5px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav div{display:flex;max-width:480px;width:100%}
+.nav button{flex:1;background:none;border:0;color:var(--mute);font:inherit;font-size:13px;font-weight:600;padding:10px 0 12px;cursor:pointer}
+.nav button.on{color:var(--blue)}
+.nav b{display:block;font-size:20px}
+.dot{background:var(--red);color:#fff;border-radius:99px;font-size:11px;padding:1px 6px;margin-left:3px}
+.msgs{display:flex;flex-direction:column;gap:8px;margin:12px 0;min-height:45vh}
+.m{max-width:80%;padding:9px 12px;border-radius:14px;background:var(--card);border:1.5px solid var(--line);font-size:15px}
+.m.me{align-self:flex-end;background:var(--blue);color:#fff;border-color:var(--blue)}
+.m small{display:block;font-size:11px;opacity:.7;font-weight:600}
+.m.sys{align-self:center;background:none;border:0;color:var(--mute);font-size:13px}
+.send{position:sticky;bottom:70px;display:flex;gap:8px;background:var(--bg);padding:8px 0}
+.empty{text-align:center;color:var(--mute);padding:30px 10px}
+.photo{display:flex;align-items:center;gap:12px}
+</style>
+</head><body><div id="app"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,collection,doc,setDoc,getDoc,addDoc,updateDoc,onSnapshot,query,where,orderBy,writeBatch,arrayUnion} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const fb=initializeApp({apiKey:"AIzaSyB7Gf4UvO8gp7Rbk-7Ze0F7FnD458Z2Phg",authDomain:"felloup.firebaseapp.com",projectId:"felloup",storageBucket:"felloup.firebasestorage.app",messagingSenderId:"449950606513",appId:"1:449950606513:web:fca71e0e85230a34e06e90"});
+const auth=getAuth(fb),db=getFirestore(fb),app=document.getElementById('app');
+const GROUPS={Sports:[['Football','⚽'],['Cricket','🏏'],['Basketball','🏀'],['Badminton','🏸'],['Table Tennis','🏓'],['Volleyball','🏐'],['Running','🏃'],['Swimming','🏊'],['Yoga','🧘'],['Chess','♟️'],['Gym','🏋️']],Creative:[['Photography','📷'],['Music','🎵'],['Dance','💃'],['Singing','🎤'],['Video Editing','🎞️'],['Art','🎨'],['Writing','✍️']],Social:[['Movies','🎬'],['Food and Cafes','🍕'],['Trips and Treks','⛰️'],['Gaming','🎮'],['Events and Fests','🎉'],['Hangout','☕']],Growth:[['Coding','💻'],['Study','📚'],['Startups','🚀'],['Public Speaking','🎙️'],['Placement Prep','💼'],['Language Practice','🗣️']]};
+const ACTS=Object.values(GROUPS).flat();
+const EMO=Object.fromEntries(ACTS);
+const AUD={both:'Everyone',women:'Women only',men:'Men only'};
+const H=36e5,D=864e5;
+const at=(d,h,m)=>{const x=new Date();x.setDate(x.getDate()+d);x.setHours(h,m,0,0);return x.getTime()};
+const sameDay=(a,b)=>new Date(a).toDateString()===new Date(b).toDateString();
+const lt=ts=>new Date(ts-new Date(ts).getTimezoneOffset()*6e4).toISOString().slice(0,16);
+const fmt=ts=>{const d=new Date(ts),n=new Date(),t=d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}),df=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(n.getFullYear(),n.getMonth(),n.getDate()))/D);return (df===0?'Today':df===1?'Tomorrow':d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'}))+', '+t};
+const NAMES=['Aman','Riya','Kabir','Sneha','Rohan','Tanvi'];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let U=null,squads=[],inR=[],outR=[],chat=[],tab='today',only=true,v='auth',chatId=null,draft={interests:[],photo:''},creating=0,un=[],unChat=null;
+const avatar=u=>u.photo?`<img class="av" src="${u.photo}" alt="">`:`<div class="av">${esc(u.name[0]||'?')}</div>`;
+
+const sq=id=>squads.find(s=>s.id===id);
+const errMsg=e=>({'auth/invalid-credential':'Wrong email or password.','auth/email-already-in-use':'This email already has an account. Log in instead.','auth/weak-password':'Password must be at least 6 characters.','auth/invalid-email':'Enter a valid email.','auth/network-request-failed':'No internet connection.'})[e.code]||(console.error(e),'Something went wrong. Try again.');
+const go=x=>{v=x;render();window.scrollTo(0,0)};
+const refresh=()=>{if(['home','alerts','chat'].includes(v))render()};
+function render(){
+  const m=document.getElementById('msg'),mv=m?m.value:'',foc=m&&document.activeElement===m;
+  app.innerHTML=({auth:vAuth,signup:vSignup,home:vHome,create:vCreate,alerts:vAlerts,profile:vProfile,chat:vChat})[v]()+(U&&v!=='chat'?nav():'');
+  if(v==='chat'){const n=document.getElementById('msg');if(n&&mv)n.value=mv;if(n&&foc)n.focus();const l=document.querySelector('.msgs');l&&l.lastElementChild&&l.lastElementChild.scrollIntoView()}
+}
+function nav(){
+  const n=inR.filter(r=>r.status==='pending').length;
+  const t=(k,i,l)=>`<button class="${v===k?'on':''}" onclick="go('${k}')"><b>${i}</b>${l}${k==='alerts'&&n?`<span class="dot">${n}</span>`:''}</button>`;
+  return `<div class="nav"><div>${t('home','🏠','Home')}${t('create','➕','Create')}${t('alerts','🔔','Alerts')}${t('profile','👤','Me')}</div></div>`;
+}
+function chips(sel,fn){return Object.entries(GROUPS).map(([g,l])=>`<div class="meta" style="margin:12px 0 6px;font-weight:600">${g}</div><div class="chips">${l.map(([n,e])=>`<button type="button" class="chip ${sel.includes(n)?'on':''}" onclick="${fn}('${n}')">${e} ${n}</button>`).join('')}</div>`).join('')}
+
+/* AUTH */
+onAuthStateChanged(auth,async u=>{
+  if(creating)return;
+  if(!u){U=null;un.forEach(f=>f());un=[];v='auth';render();return}
+  try{const d=await getDoc(doc(db,'users',u.uid));
+    if(d.exists()){U={...d.data(),uid:u.uid};start();v='home'}else v='signup'}catch(e){console.error(e);v='auth'}
+  render();
+});
+function start(){
+  un.forEach(f=>f());
+  un=[onSnapshot(query(collection(db,'squads'),where('ts','>',Date.now()-2*H)),s=>{squads=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+  onSnapshot(query(collection(db,'requests'),where('creator','==',U.uid)),s=>{inR=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+  onSnapshot(query(collection(db,'requests'),where('uid','==',U.uid)),s=>{outR=s.docs.map(d=>({id:d.id,...d.data()}));refresh()})];
+}
+function vAuth(){return `<h1>FelloUp</h1><p class="sub">Find your squad on campus.</p>
+  <label>Email</label><input id="a-mail" type="email" autocomplete="email"><label>Password</label><input id="a-pw" type="password" autocomplete="current-password">
+  <div class="err" id="err"></div><button class="btn" onclick="login()">Log in</button><button class="btn ghost" onclick="draft.interests=[];go('signup')">Create new account</button>`}
+async function login(){const e=document.getElementById('err');try{await signInWithEmailAndPassword(auth,document.getElementById('a-mail').value.trim(),document.getElementById('a-pw').value)}catch(x){e.textContent=errMsg(x)}}
+function vSignup(){const d=draft;return `<h1>FelloUp</h1><p class="sub">Create your account. It takes one minute.</p>
+  <div class="photo">${d.photo?`<img class="av" src="${d.photo}" alt="">`:'<div class="av">+</div>'}<label style="margin:0;cursor:pointer;color:var(--blue)">Add profile photo<input type="file" accept="image/*" hidden onchange="pic(this)"></label></div>
+  <label>Name</label><input id="f-name" value="${esc(d.name||'')}">
+  ${auth.currentUser?'':`<label>Email</label><input id="f-mail" type="email" value="${esc(d.email||'')}"><label>Password (6+ characters)</label><input id="f-pw" type="password" value="${esc(d.pw||'')}">`}
+  <div class="row"><div><label>Age</label><input id="f-age" type="number" min="16" max="40" value="${esc(d.age||'')}"></div>
+  <div><label>Gender</label><select id="f-gender">${['Male','Female','Other'].map(g=>`<option ${d.gender===g?'selected':''}>${g}</option>`).join('')}</select></div></div>
+  <label>College</label><input id="f-college" value="${esc(d.college||'')}">
+  <div class="row"><div><label>City</label><input id="f-city" value="${esc(d.city||'')}"></div><div><label>College ID</label><input id="f-cid" value="${esc(d.cid||'')}"></div></div>
+  <label>Pick your interests</label>${chips(d.interests,'togI')}
+  <div class="err" id="err"></div><button class="btn" onclick="signup()">Join campus</button>
+  ${auth.currentUser?'':`<button class="btn ghost" onclick="go('auth')">I already have an account</button>`}`}
+function keep(){const g=i=>(document.getElementById(i)||{}).value||'';Object.assign(draft,{name:g('f-name').trim(),email:g('f-mail').trim(),pw:g('f-pw'),age:g('f-age'),gender:g('f-gender'),college:g('f-college').trim(),city:g('f-city').trim(),cid:g('f-cid').trim()})}
+function togI(n){keep();const i=draft.interests.indexOf(n);i<0?draft.interests.push(n):draft.interests.splice(i,1);render()}
+function pic(inp){const f=inp.files[0];if(!f)return;keep();const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=120;const x=c.getContext('2d'),s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,120,120);draft.photo=c.toDataURL('image/jpeg',.7);render()};im.src=r.result};r.readAsDataURL(f)}
+
+async function signup(){
+  keep();const d=draft,e=document.getElementById('err'),has=!!auth.currentUser;
+  if(!d.name||!d.age||!d.college||!d.city||!d.cid||(!has&&(!d.email||!d.pw))){e.textContent='Fill in all the fields.';return}
+  if(!d.interests.length){e.textContent='Pick at least one interest to see squads.';return}
+  try{creating=1;const uid=has?auth.currentUser.uid:(await createUserWithEmailAndPassword(auth,d.email,d.pw)).user.uid;
+    const p={name:d.name,age:d.age,gender:d.gender||'Male',college:d.college,city:d.city,cid:d.cid,photo:d.photo,interests:d.interests};
+    await setDoc(doc(db,'users',uid),p);U={...p,uid};creating=0;start();go('home')}catch(x){creating=0;e.textContent=errMsg(x)}
+}
+/* HOME */
+function inTab(s,t){const n=Date.now();if(s.ts<n-2*H)return false;return t==='today'?sameDay(s.ts,n):!sameDay(s.ts,n)}
+function allowed(s){const g=U.gender;return s.aud==='both'||(s.aud==='women'&&g==='Female')||(s.aud==='men'&&g==='Male')}
+function vHome(){
+  const base=squads.filter(s=>s.members.includes(U.uid)||(allowed(s)&&(!only||U.interests.includes(s.act))));
+  const cnt=t=>base.filter(s=>inTab(s,t)).length,list=base.filter(s=>inTab(s,tab)).sort((a,b)=>a.ts-b.ts);
+  return `<div class="top"><div><h1>Squads</h1><div class="meta">${esc(U.college)}</div></div>${avatar(U)}</div>
+  <div class="chips" style="margin-bottom:10px"><button class="chip ${tab==='today'?'on':''}" onclick="setTab('today')">Today (${cnt('today')})</button><button class="chip ${tab==='week'?'on':''}" onclick="setTab('week')">This week (${cnt('week')})</button></div>
+  <div class="chips" style="margin-bottom:14px"><button class="chip ${only?'on':''}" onclick="setOnly(true)">For my interests</button><button class="chip ${!only?'on':''}" onclick="setOnly(false)">All squads</button></div>
+  ${list.length?list.map(card).join(''):`<div class="empty">${tab==='today'?'Nothing planned for today.':'Nothing planned this week.'}<br>Create a squad or check the other tab.</div>`}`;
+}
+const setTab=t=>{tab=t;render()},setOnly=b=>{only=b;render()};
+function card(s){
+  const n=s.members.length,mine=s.creator===U.uid,mem=s.members.includes(U.uid),rq=outR.find(r=>r.sid===s.id);
+  let act;
+  if(mem)act=`<button class="btn sm alt" onclick="openChat('${s.id}')">Open chat</button>`;
+  else if(rq)act=`<span class="tag">${rq.status==='pending'?'Request sent':'Not accepted'}</span>`;
+  else if(n>=s.need)act=`<span class="tag">Squad full</span>`;
+  else act=`<button class="btn sm" onclick="join('${s.id}')">Ask to join</button>`;
+  return `<div class="card"><div class="sq-h"><div class="emo">${EMO[s.act]||'👥'}</div><div><div class="sq-t">${esc(s.title)}</div><div class="meta">${fmt(s.ts)} · ${esc(s.place)}</div></div></div>
+  <p class="meta" style="margin:10px 0 0">${esc(s.desc)}</p><div class="bar"><i style="width:${Math.min(100,n/s.need*100)}%"></i></div>
+  <div class="foot"><span class="tag">${n}/${s.need} joined${mine?' · your squad':' · by '+esc(s.creatorName)}${s.aud!=='both'?' · '+AUD[s.aud]:''}</span>${act}</div></div>`;
+}
+async function join(id){const s=sq(id);try{await setDoc(doc(db,'requests',id+'_'+U.uid),{sid:id,uid:U.uid,name:U.name,creator:s.creator,title:s.title,status:'pending'})}catch(e){alert('Could not send request. Try again.')}}
+/* CREATE */
+function vCreate(){
+  return `<h1>Create squad</h1><p class="sub">Tell people what you're planning.</p>
+  <label>Activity</label><select id="c-act">${Object.entries(GROUPS).map(([g,l])=>`<optgroup label="${g}">${l.map(([n,e])=>`<option>${n}</option>`).join('')}</optgroup>`).join('')}</select>
+  <label>Squad title</label><input id="c-title" placeholder="e.g. Movie night">
+  <label>Date and time (next 7 days)</label><input id="c-when" type="datetime-local" min="${lt(Date.now())}" max="${lt(Date.now()+7*D)}">
+  <label>Place</label><input id="c-place" placeholder="e.g. College ground">
+  <label>People needed (including you)</label><input id="c-need" type="number" min="2" max="50" value="5">
+  <label>Who can join</label><select id="c-aud"><option value="both">Everyone</option><option value="women">Women only</option><option value="men">Men only</option></select>
+  <label>Description</label><textarea id="c-desc" placeholder="Anything people should know"></textarea>
+  <div class="err" id="err"></div><button class="btn" onclick="create()">Create squad</button>`;
+}
+
+async function create(){
+  const g=i=>document.getElementById(i).value.trim(),e=document.getElementById('err');
+  const w=g('c-when'),need=parseInt(g('c-need')),aud=g('c-aud'),ts=new Date(w).getTime(),gen=U.gender;
+  if(!g('c-title')||!w||!g('c-place')||!need||need<2){e.textContent='Add a title, time, place and at least 2 people.';return}
+  if(ts<Date.now()||ts>Date.now()+7*D+H){e.textContent='Pick a time within the next 7 days.';return}
+  if((aud==='women'&&gen!=='Female')||(aud==='men'&&gen!=='Male')){e.textContent=AUD[aud]+' squads can only be created by members of that group.';return}
+  try{await addDoc(collection(db,'squads'),{act:g('c-act'),title:g('c-title'),ts,place:g('c-place'),need,aud,desc:g('c-desc')||'No description added.',creator:U.uid,creatorName:U.name,members:[U.uid],names:{[U.uid]:U.name}});
+    tab=sameDay(ts,Date.now())?'today':'week';go('home')}catch(x){e.textContent='Could not create the squad. Try again.'}
+}
+/* ALERTS */
+function vAlerts(){
+  const inc=inR.slice().sort((a,b)=>(b.status==='pending')-(a.status==='pending')),out=outR.slice();
+  return `<h1>Alerts</h1><p class="sub">Requests to your squads and updates on yours.</p><h2>Join requests</h2>
+  ${inc.length?inc.map(r=>`<div class="card"><div class="sq-t">${esc(r.name)} wants to join</div><div class="meta">${esc(r.title)}</div>
+  ${r.status==='pending'?`<div class="row" style="margin-top:12px"><button class="btn sm" onclick="decide('${r.id}',1)">Accept</button><button class="btn sm no" onclick="decide('${r.id}',0)">Reject</button></div>`:`<div class="tag" style="margin-top:8px">${r.status==='accepted'?'Accepted':'Rejected'}</div>`}</div>`).join(''):'<div class="empty">No requests yet.</div>'}
+  <h2 style="margin-top:24px">My requests</h2>
+  ${out.length?out.map(r=>`<div class="card"><div class="sq-t">${esc(r.title)}</div><div class="meta">${r.status==='pending'?'Waiting for the creator':r.status==='accepted'?'Accepted. You are in the squad.':'Not accepted this time.'}</div>
+  ${r.status==='accepted'&&sq(r.sid)?`<button class="btn sm alt" style="margin-top:10px" onclick="openChat('${r.sid}')">Open chat</button>`:''}</div>`).join(''):'<div class="empty">Ask to join a squad from Home.</div>'}`;
+}
+async function decide(id,ok){
+  const r=inR.find(x=>x.id===id),s=r&&sq(r.sid);if(!s)return;
+  const yes=ok&&s.members.length<s.need,b=writeBatch(db);
+  b.update(doc(db,'requests',id),{status:yes?'accepted':'rejected'});
+  if(yes){b.update(doc(db,'squads',s.id),{members:arrayUnion(r.uid),['names.'+r.uid]:r.name});b.set(doc(collection(db,'squads',s.id,'chat')),{u:U.uid,n:'',t:r.name+' joined the squad',ts:Date.now(),sys:1})}
+  try{await b.commit()}catch(e){alert('Could not update. Try again.')}
+}
+/* CHAT */
+function openChat(id){chatId=id;chat=[];unChat&&unChat();unChat=onSnapshot(query(collection(db,'squads',id,'chat'),orderBy('ts')),s=>{chat=s.docs.map(d=>d.data());refresh()},e=>console.error(e));go('chat')}
+function closeChat(){unChat&&unChat();unChat=null;go('home')}
+function vChat(){
+  const s=sq(chatId);if(!s)return '<div class="empty">This squad has ended.</div><button class="btn" onclick="closeChat()">Back</button>';
+  return `<div class="top"><button class="btn sm ghost" onclick="closeChat()">Back</button><div style="text-align:right"><div class="sq-t">${esc(s.title)}</div><div class="meta">${esc(s.members.map(u=>(s.names||{})[u]||'').join(', '))}</div></div></div>
+  <div class="msgs">${chat.length?chat.map(m=>m.sys?`<div class="m sys">${esc(m.t)}</div>`:`<div class="m ${m.u===U.uid?'me':''}"><small>${esc(m.n)}</small>${esc(m.t)}</div>`).join(''):'<div class="empty">Say hi to your squad.</div>'}</div>
+  <div class="send"><input id="msg" placeholder="Message" onkeydown="if(event.key==='Enter')send()"><button class="btn sm" onclick="send()">Send</button></div>`;
+}
+async function send(){const i=document.getElementById('msg'),t=i.value.trim();if(!t)return;i.value='';try{await addDoc(collection(db,'squads',chatId,'chat'),{u:U.uid,n:U.name,t,ts:Date.now()})}catch(e){alert('Message not sent. Try again.')}}
+/* PROFILE */
+function vProfile(){const u=U;return `<h1>Me</h1><div class="card"><div class="sq-h">${avatar(u)}<div><div class="sq-t">${esc(u.name)}, ${esc(u.age)}</div><div class="meta">${esc(u.college)} · ${esc(u.city)}</div><div class="meta">ID ${esc(u.cid)} · ${esc(u.gender)}</div></div></div></div>
+  <h2>Interests</h2>${chips(u.interests,'togMine')}<button class="btn ghost" onclick="logout()">Log out</button>`}
+async function togMine(n){const a=U.interests,i=a.indexOf(n);i<0?a.push(n):a.length>1&&a.splice(i,1);render();try{await updateDoc(doc(db,'users',U.uid),{interests:a})}catch(e){}}
+const logout=()=>signOut(auth);
+Object.assign(window,{go,togI,pic,signup,login,setTab,setOnly,join,create,decide,openChat,closeChat,send,togMine,logout,render,draft});
+render();
+</script></body></html>
