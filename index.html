@@ -56,7 +56,7 @@ textarea{min-height:80px;resize:vertical}
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,doc,setDoc,getDoc,addDoc,updateDoc,onSnapshot,query,where,orderBy,writeBatch,arrayUnion} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,doc,setDoc,getDoc,addDoc,updateDoc,onSnapshot,query,where,orderBy,writeBatch,arrayUnion,getDocs,deleteDoc} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const fb=initializeApp({apiKey:"AIzaSyB7Gf4UvO8gp7Rbk-7Ze0F7FnD458Z2Phg",authDomain:"felloup.firebaseapp.com",projectId:"felloup",storageBucket:"felloup.firebasestorage.app",messagingSenderId:"449950606513",appId:"1:449950606513:web:fca71e0e85230a34e06e90"});
 const auth=getAuth(fb),db=getFirestore(fb),app=document.getElementById('app');
 const GROUPS={Sports:[['Football','⚽'],['Cricket','🏏'],['Basketball','🏀'],['Badminton','🏸'],['Table Tennis','🏓'],['Volleyball','🏐'],['Running','🏃'],['Swimming','🏊'],['Yoga','🧘'],['Chess','♟️'],['Gym','🏋️']],Creative:[['Photography','📷'],['Music','🎵'],['Dance','💃'],['Singing','🎤'],['Video Editing','🎞️'],['Art','🎨'],['Writing','✍️']],Social:[['Movies','🎬'],['Food and Cafes','🍕'],['Trips and Treks','⛰️'],['Gaming','🎮'],['Events and Fests','🎉'],['Hangout','☕']],Growth:[['Coding','💻'],['Study','📚'],['Startups','🚀'],['Public Speaking','🎙️'],['Placement Prep','💼'],['Language Practice','🗣️']]};
@@ -71,22 +71,22 @@ const fmt=ts=>{const d=new Date(ts),n=new Date(),t=d.toLocaleTimeString('en-IN',
 const NAMES=['Aman','Riya','Kabir','Sneha','Rohan','Tanvi'];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-let U=null,squads=[],inR=[],outR=[],chat=[],tab='today',only=true,v='auth',chatId=null,draft={interests:[],photo:''},creating=0,un=[],unChat=null;
+let U=null,squads=[],inR=[],outR=[],chat=[],items=[],people=[],home='squads',cat='All',peopleOnly=true,chatPath=[],chatTitle='',chatSub='',tab='today',only=true,v='auth',chatId=null,draft={interests:[],photo:''},creating=0,un=[],unChat=null;
 const avatar=u=>u.photo?`<img class="av" src="${u.photo}" alt="">`:`<div class="av">${esc(u.name[0]||'?')}</div>`;
 
 const sq=id=>squads.find(s=>s.id===id);
 const errMsg=e=>({'auth/invalid-credential':'Wrong email or password.','auth/email-already-in-use':'This email already has an account. Log in instead.','auth/weak-password':'Password must be at least 6 characters.','auth/invalid-email':'Enter a valid email.','auth/network-request-failed':'No internet connection.'})[e.code]||(console.error(e),'Something went wrong. Try again.');
 const go=x=>{v=x;render();window.scrollTo(0,0)};
-const refresh=()=>{if(['home','alerts','chat'].includes(v))render()};
+const refresh=()=>{if(['home','alerts','chat','market'].includes(v))render()};
 function render(){
   const m=document.getElementById('msg'),mv=m?m.value:'',foc=m&&document.activeElement===m;
-  app.innerHTML=({auth:vAuth,signup:vSignup,home:vHome,create:vCreate,alerts:vAlerts,profile:vProfile,chat:vChat})[v]()+(U&&v!=='chat'?nav():'');
+  app.innerHTML=({auth:vAuth,signup:vSignup,home:vHome,create:vCreate,alerts:vAlerts,profile:vProfile,chat:vChat,market:vMarket,sell:vSell})[v]()+(U&&v!=='chat'?nav():'');
   if(v==='chat'){const n=document.getElementById('msg');if(n&&mv)n.value=mv;if(n&&foc)n.focus();const l=document.querySelector('.msgs');l&&l.lastElementChild&&l.lastElementChild.scrollIntoView()}
 }
 function nav(){
   const n=inR.filter(r=>r.status==='pending').length;
   const t=(k,i,l)=>`<button class="${v===k?'on':''}" onclick="go('${k}')"><b>${i}</b>${l}${k==='alerts'&&n?`<span class="dot">${n}</span>`:''}</button>`;
-  return `<div class="nav"><div>${t('home','🏠','Home')}${t('create','➕','Create')}${t('alerts','🔔','Alerts')}${t('profile','👤','Me')}</div></div>`;
+  return `<div class="nav"><div>${t('home','🏠','Home')}${t('create','➕','Squad')}${t('market','🛍️','Market')}${t('alerts','🔔','Alerts')}${t('profile','👤','Me')}</div></div>`;
 }
 function chips(sel,fn){return Object.entries(GROUPS).map(([g,l])=>`<div class="meta" style="margin:12px 0 6px;font-weight:600">${g}</div><div class="chips">${l.map(([n,e])=>`<button type="button" class="chip ${sel.includes(n)?'on':''}" onclick="${fn}('${n}')">${e} ${n}</button>`).join('')}</div>`).join('')}
 
@@ -99,8 +99,9 @@ onAuthStateChanged(auth,async u=>{
   render();
 });
 function start(){
+  loadPeople();
   un.forEach(f=>f());
-  un=[onSnapshot(query(collection(db,'squads'),where('ts','>',Date.now()-2*H)),s=>{squads=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+  un=[onSnapshot(collection(db,'items'),s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),onSnapshot(query(collection(db,'squads'),where('ts','>',Date.now()-2*H)),s=>{squads=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
   onSnapshot(query(collection(db,'requests'),where('creator','==',U.uid)),s=>{inR=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
   onSnapshot(query(collection(db,'requests'),where('uid','==',U.uid)),s=>{outR=s.docs.map(d=>({id:d.id,...d.data()}));refresh()})];
 }
@@ -135,9 +136,10 @@ async function signup(){
 function inTab(s,t){const n=Date.now();if(s.ts<n-2*H)return false;return t==='today'?sameDay(s.ts,n):!sameDay(s.ts,n)}
 function allowed(s){const g=U.gender;return s.aud==='both'||(s.aud==='women'&&g==='Female')||(s.aud==='men'&&g==='Male')}
 function vHome(){
+  if(home==='people')return vPeople();
   const base=squads.filter(s=>s.members.includes(U.uid)||(allowed(s)&&(!only||U.interests.includes(s.act))));
   const cnt=t=>base.filter(s=>inTab(s,t)).length,list=base.filter(s=>inTab(s,tab)).sort((a,b)=>a.ts-b.ts);
-  return `<div class="top"><div><h1>Squads</h1><div class="meta">${esc(U.college)}</div></div>${avatar(U)}</div>
+  return `${hTop()}
   <div class="chips" style="margin-bottom:10px"><button class="chip ${tab==='today'?'on':''}" onclick="setTab('today')">Today (${cnt('today')})</button><button class="chip ${tab==='week'?'on':''}" onclick="setTab('week')">This week (${cnt('week')})</button></div>
   <div class="chips" style="margin-bottom:14px"><button class="chip ${only?'on':''}" onclick="setOnly(true)">For my interests</button><button class="chip ${!only?'on':''}" onclick="setOnly(false)">All squads</button></div>
   ${list.length?list.map(card).join(''):`<div class="empty">${tab==='today'?'Nothing planned for today.':'Nothing planned this week.'}<br>Create a squad or check the other tab.</div>`}`;
@@ -181,34 +183,77 @@ async function create(){
 function vAlerts(){
   const inc=inR.slice().sort((a,b)=>(b.status==='pending')-(a.status==='pending')),out=outR.slice();
   return `<h1>Alerts</h1><p class="sub">Requests to your squads and updates on yours.</p><h2>Join requests</h2>
-  ${inc.length?inc.map(r=>`<div class="card"><div class="sq-t">${esc(r.name)} wants to join</div><div class="meta">${esc(r.title)}</div>
+  ${inc.length?inc.map(r=>`<div class="card"><div class="sq-t">${esc(r.name)} wants to ${r.kind==='dm'?'connect':'join'}</div><div class="meta">${esc(r.title)}</div>
   ${r.status==='pending'?`<div class="row" style="margin-top:12px"><button class="btn sm" onclick="decide('${r.id}',1)">Accept</button><button class="btn sm no" onclick="decide('${r.id}',0)">Reject</button></div>`:`<div class="tag" style="margin-top:8px">${r.status==='accepted'?'Accepted':'Rejected'}</div>`}</div>`).join(''):'<div class="empty">No requests yet.</div>'}
   <h2 style="margin-top:24px">My requests</h2>
-  ${out.length?out.map(r=>`<div class="card"><div class="sq-t">${esc(r.title)}</div><div class="meta">${r.status==='pending'?'Waiting for the creator':r.status==='accepted'?'Accepted. You are in the squad.':'Not accepted this time.'}</div>
-  ${r.status==='accepted'&&sq(r.sid)?`<button class="btn sm alt" style="margin-top:10px" onclick="openChat('${r.sid}')">Open chat</button>`:''}</div>`).join(''):'<div class="empty">Ask to join a squad from Home.</div>'}`;
+  ${out.length?out.map(r=>`<div class="card"><div class="sq-t">${r.kind==='dm'?'Connect with '+esc((people.find(x=>x.uid===r.creator)||{}).name||'a student'):esc(r.title)}</div><div class="meta">${r.status==='pending'?'Waiting for the creator':r.status==='accepted'?'Accepted. You are in the squad.':'Not accepted this time.'}</div>
+  ${r.status==='accepted'&&r.kind==='dm'?`<button class="btn sm alt" style="margin-top:10px" onclick="openDm('${r.creator}')">Open chat</button>`:r.status==='accepted'&&sq(r.sid)?`<button class="btn sm alt" style="margin-top:10px" onclick="openChat('${r.sid}')">Open chat</button>`:''}</div>`).join(''):'<div class="empty">Ask to join a squad from Home.</div>'}`;
 }
 async function decide(id,ok){
-  const r=inR.find(x=>x.id===id),s=r&&sq(r.sid);if(!s)return;
+  const r=inR.find(x=>x.id===id);if(!r)return;if(r.kind==='dm'){try{await updateDoc(doc(db,'requests',id),{status:ok?'accepted':'rejected'})}catch(e){alert('Could not update. Try again.')}return}const s=sq(r.sid);if(!s)return;
   const yes=ok&&s.members.length<s.need,b=writeBatch(db);
   b.update(doc(db,'requests',id),{status:yes?'accepted':'rejected'});
   if(yes){b.update(doc(db,'squads',s.id),{members:arrayUnion(r.uid),['names.'+r.uid]:r.name});b.set(doc(collection(db,'squads',s.id,'chat')),{u:U.uid,n:'',t:r.name+' joined the squad',ts:Date.now(),sys:1})}
   try{await b.commit()}catch(e){alert('Could not update. Try again.')}
 }
 /* CHAT */
-function openChat(id){chatId=id;chat=[];unChat&&unChat();unChat=onSnapshot(query(collection(db,'squads',id,'chat'),orderBy('ts')),s=>{chat=s.docs.map(d=>d.data());refresh()},e=>console.error(e));go('chat')}
+function openChat(id){const s=sq(id);startChat(id,['squads',id,'chat'],s?s.title:'Squad',s?s.members.map(u=>(s.names||{})[u]||'').join(', '):'')}
+function openDm(o){const p=people.find(x=>x.uid===o);startChat(pair(o),['dms',pair(o),'chat'],p?p.name:'Chat','One-to-one')}
+function startChat(id,path,t,sub){chatId=id;chatPath=path;chatTitle=t;chatSub=sub;chat=[];unChat&&unChat();unChat=onSnapshot(query(collection(db,...path),orderBy('ts')),s=>{chat=s.docs.map(d=>d.data());refresh()},e=>console.error(e));go('chat')}
 function closeChat(){unChat&&unChat();unChat=null;go('home')}
 function vChat(){
-  const s=sq(chatId);if(!s)return '<div class="empty">This squad has ended.</div><button class="btn" onclick="closeChat()">Back</button>';
-  return `<div class="top"><button class="btn sm ghost" onclick="closeChat()">Back</button><div style="text-align:right"><div class="sq-t">${esc(s.title)}</div><div class="meta">${esc(s.members.map(u=>(s.names||{})[u]||'').join(', '))}</div></div></div>
-  <div class="msgs">${chat.length?chat.map(m=>m.sys?`<div class="m sys">${esc(m.t)}</div>`:`<div class="m ${m.u===U.uid?'me':''}"><small>${esc(m.n)}</small>${esc(m.t)}</div>`).join(''):'<div class="empty">Say hi to your squad.</div>'}</div>
+  return `<div class="top"><button class="btn sm ghost" onclick="closeChat()">Back</button><div style="text-align:right"><div class="sq-t">${esc(chatTitle)}</div><div class="meta">${esc(chatSub)}</div></div></div>
+  <div class="msgs">${chat.length?chat.map(m=>m.sys?`<div class="m sys">${esc(m.t)}</div>`:`<div class="m ${m.u===U.uid?'me':''}"><small>${esc(m.n)}</small>${esc(m.t)}</div>`).join(''):'<div class="empty">Say hi!</div>'}</div>
   <div class="send"><input id="msg" placeholder="Message" onkeydown="if(event.key==='Enter')send()"><button class="btn sm" onclick="send()">Send</button></div>`;
 }
-async function send(){const i=document.getElementById('msg'),t=i.value.trim();if(!t)return;i.value='';try{await addDoc(collection(db,'squads',chatId,'chat'),{u:U.uid,n:U.name,t,ts:Date.now()})}catch(e){alert('Message not sent. Try again.')}}
+async function send(){const i=document.getElementById('msg'),t=i.value.trim();if(!t)return;i.value='';try{await addDoc(collection(db,...chatPath),{u:U.uid,n:U.name,t,ts:Date.now()})}catch(e){alert('Message not sent. Try again.')}}
 /* PROFILE */
 function vProfile(){const u=U;return `<h1>Me</h1><div class="card"><div class="sq-h">${avatar(u)}<div><div class="sq-t">${esc(u.name)}, ${esc(u.age)}</div><div class="meta">${esc(u.college)} · ${esc(u.city)}</div><div class="meta">ID ${esc(u.cid)} · ${esc(u.gender)}</div></div></div></div>
   <h2>Interests</h2>${chips(u.interests,'togMine')}<button class="btn ghost" onclick="logout()">Log out</button>`}
 async function togMine(n){const a=U.interests,i=a.indexOf(n);i<0?a.push(n):a.length>1&&a.splice(i,1);render();try{await updateDoc(doc(db,'users',U.uid),{interests:a})}catch(e){}}
 const logout=()=>signOut(auth);
-Object.assign(window,{go,togI,pic,signup,login,setTab,setOnly,join,create,decide,openChat,closeChat,send,togMine,logout,render,draft});
+const sameCol=x=>(x||'').trim().toLowerCase()===U.college.trim().toLowerCase();
+const shared=p=>(p.interests||[]).filter(i=>U.interests.includes(i));
+const pair=o=>[U.uid,o].sort().join('_');
+async function loadPeople(){try{const q=await getDocs(collection(db,'users'));people=q.docs.map(d=>({...d.data(),uid:d.id})).filter(p=>p.uid!==U.uid);refresh()}catch(e){console.error(e)}}
+const setHome=h=>{home=h;if(h==='people')loadPeople();render()},setPOnly=b=>{peopleOnly=b;render()};
+const hTop=()=>`<div class="top"><div><h1>FelloUp</h1><div class="meta">${esc(U.college)}</div></div>${avatar(U)}</div><div class="chips" style="margin-bottom:14px"><button class="chip ${home==='squads'?'on':''}" onclick="setHome('squads')">👥 Squads</button><button class="chip ${home==='people'?'on':''}" onclick="setHome('people')">🤝 One-to-one</button></div>`;
+function vPeople(){
+  const list=people.filter(p=>sameCol(p.college)&&(!peopleOnly||shared(p).length)).sort((a,b)=>shared(b).length-shared(a).length);
+  return hTop()+`<div class="chips" style="margin-bottom:14px"><button class="chip ${peopleOnly?'on':''}" onclick="setPOnly(true)">Common interests</button><button class="chip ${!peopleOnly?'on':''}" onclick="setPOnly(false)">Everyone at my college</button></div>`+(list.length?list.map(pcard).join(''):'<div class="empty">No one here yet.<br>Invite friends from your college to join FelloUp.</div>');
+}
+function pcard(p){
+  const r=inR.concat(outR).find(x=>x.id==='dm_'+pair(p.uid)),sh=shared(p);let act;
+  if(r&&r.status==='accepted')act=`<button class="btn sm alt" onclick="openDm('${p.uid}')">Open chat</button>`;
+  else if(r&&r.status==='pending')act=`<span class="tag">${r.uid===U.uid?'Request sent':'Wants to connect'}</span>`;
+  else if(r)act='<span class="tag">Not accepted</span>';
+  else act=`<button class="btn sm" onclick="connect('${p.uid}')">Connect</button>`;
+  return `<div class="card"><div class="sq-h">${avatar(p)}<div><div class="sq-t">${esc(p.name)}</div><div class="meta">${esc(p.city)} · ${sh.length?sh.length+' common interest'+(sh.length>1?'s':''):'No common interests'}</div></div></div><div class="chips" style="margin:10px 0">${(p.interests||[]).slice(0,6).map(i=>`<span class="chip ${U.interests.includes(i)?'on':''}" style="padding:4px 10px;font-size:12px">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div><div class="foot"><span></span>${act}</div></div>`;
+}
+async function connect(o){try{await setDoc(doc(db,'requests','dm_'+pair(o)),{kind:'dm',uid:U.uid,name:U.name,creator:o,title:'One-to-one chat',status:'pending'})}catch(e){alert('Could not send request. Try again.')}}
+/* MARKET */
+const CATS=[['Books','📚'],['Gym','🏋️'],['Furniture','🛋️'],['Electronics','🎧'],['Clothes','👕'],['Other','📦']],CE=Object.fromEntries(CATS);
+function vMarket(){
+  const list=items.filter(i=>sameCol(i.college)&&(cat==='All'||i.cat===cat)).sort((a,b)=>b.ts-a.ts);
+  return `<div class="top"><div><h1>Market</h1><div class="meta">${esc(U.college)}</div></div><button class="btn sm" onclick="go('sell')">Sell</button></div>
+  <div class="chips" style="margin-bottom:14px">${['All',...CATS.map(c=>c[0])].map(c=>`<button class="chip ${cat===c?'on':''}" onclick="setCat('${c}')">${c}</button>`).join('')}</div>`+(list.length?list.map(icard).join(''):'<div class="empty">Nothing listed yet.<br>Sell your old books or gym gear.</div>');
+}
+function icard(i){
+  const mine=i.seller===U.uid,n=(i.wa||'').replace(/\D/g,''),wa=n.length===10?'91'+n:n;
+  const act=mine?`<div class="row">${i.sold?'':`<button class="btn sm ghost" onclick="sold('${i.id}')">Mark sold</button>`}<button class="btn sm no" onclick="delItem('${i.id}')">Delete</button></div>`:i.sold?'<span class="tag">Sold</span>':`<a class="btn sm" style="text-decoration:none" href="https://wa.me/${wa}?text=${encodeURIComponent('Hi, I saw your '+i.title+' on FelloUp. Is it still available?')}" target="_blank" rel="noopener">WhatsApp seller</a>`;
+  return `<div class="card"${i.sold?' style="opacity:.6"':''}><div class="sq-h"><div class="emo">${CE[i.cat]||'📦'}</div><div><div class="sq-t">${esc(i.title)}</div><div class="meta">₹${esc(i.price)} · by ${esc(i.sellerName)}</div></div></div><p class="meta" style="margin:10px 0 12px">${esc(i.desc)}</p><div class="foot"><span class="tag">${esc(i.cat)}${i.sold?' · Sold':''}</span>${act}</div></div>`;
+}
+function vSell(){return `<h1>Sell an item</h1><p class="sub">Shown to students of your college.</p>
+  <label>Category</label><select id="s-cat">${CATS.map(c=>`<option>${c[0]}</option>`).join('')}</select>
+  <label>Item name</label><input id="s-title" placeholder="e.g. Physics class 12 books">
+  <label>Price (₹)</label><input id="s-price" type="number" min="0">
+  <label>Description</label><textarea id="s-desc" placeholder="Condition, how old, where to meet"></textarea>
+  <label>WhatsApp number (buyers message you here)</label><input id="s-wa" type="tel" placeholder="10-digit number">
+  <div class="err" id="err"></div><button class="btn" onclick="sell()">List item</button><button class="btn ghost" onclick="go('market')">Cancel</button>`}
+async function sell(){const g=i=>document.getElementById(i).value.trim(),e=document.getElementById('err'),wa=g('s-wa').replace(/\D/g,'');
+  if(!g('s-title')||!g('s-price')||wa.length<10){e.textContent='Add item name, price and a valid WhatsApp number.';return}
+  try{await addDoc(collection(db,'items'),{cat:g('s-cat'),title:g('s-title'),price:g('s-price'),desc:g('s-desc')||'No description added.',wa,seller:U.uid,sellerName:U.name,college:U.college,ts:Date.now(),sold:false});go('market')}catch(x){e.textContent='Could not list the item. Try again.'}}
+const sold=async id=>{try{await updateDoc(doc(db,'items',id),{sold:true})}catch(e){}},delItem=async id=>{if(confirm('Delete this listing?'))try{await deleteDoc(doc(db,'items',id))}catch(e){}},setCat=c=>{cat=c;render()};
+Object.assign(window,{setHome,setPOnly,connect,openDm,sell,sold,delItem,setCat,go,togI,pic,signup,login,setTab,setOnly,join,create,decide,openChat,closeChat,send,togMine,logout,render,draft});
 render();
 </script></body></html>
