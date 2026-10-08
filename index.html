@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#2F5BFF"><title>UniSide</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#2F5BFF"><title>UniSide</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="description" content="Find squads, partners and a marketplace at your college."><meta property="og:title" content="UniSide"><meta property="og:description" content="Find squads, partners and a marketplace at your college."><meta property="og:image" content="https://uniside.netlify.app/icon-512.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F2F4F8;--card:#fff;--ink:#14182B;--mute:#6B7288;--line:#E1E5EE;--blue:#2F5BFF;--lime:#C8F169;--red:#D93B4A;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -57,8 +57,11 @@ textarea{min-height:80px;resize:vertical}
 </head><body><div id="app"></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,deleteUser,reauthenticateWithCredential,EmailAuthProvider} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,collection,doc,setDoc,getDoc,addDoc,updateDoc,onSnapshot,query,where,orderBy,writeBatch,arrayUnion,getDocs,deleteDoc,limit,startAfter} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+window.__err=m=>{let b=document.getElementById('dbg');if(!b){b=document.createElement('div');b.id='dbg';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#D93B4A;color:#fff;padding:8px 12px;font:12px/1.4 system-ui;word-break:break-word';b.onclick=()=>b.remove();document.body.appendChild(b)}b.textContent='Error: '+m+' (tap to close)'};
+const ce=console.error;console.error=(...a)=>{ce(...a);try{window.__err(a.map(x=>x&&x.message?x.message:String(x)).join(' '))}catch(e){}};
+window.addEventListener('error',e=>window.__err(e.message));window.addEventListener('unhandledrejection',e=>window.__err((e.reason&&e.reason.message)||e.reason));
 const fb=initializeApp({apiKey:"AIzaSyB7Gf4UvO8gp7Rbk-7Ze0F7FnD458Z2Phg",authDomain:"felloup.firebaseapp.com",projectId:"felloup",storageBucket:"felloup.firebasestorage.app",messagingSenderId:"449950606513",appId:"1:449950606513:web:fca71e0e85230a34e06e90"});
 const auth=getAuth(fb),db=getFirestore(fb),app=document.getElementById('app');
 const COLLEGES=['IIT Patna','NIT Patna','AIIMS Patna'];
@@ -104,24 +107,24 @@ onAuthStateChanged(auth,async u=>{
 function start(){
   un.forEach(f=>f());un=[];loadPeople(true);
   const now=Date.now(),w=wk(now),m=Math.floor(now/2592e6);
-  watch('squads','wk',[w,w+1],a=>squads=a);watch('items','mk',[m,m-1],a=>items=a);
-  un.push(onSnapshot(query(collection(db,'requests'),where('creator','==',U.uid)),s=>{inR=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}),
+  watch('squads','wk',[w,w+1],a=>squads=a.filter(s=>nb(s.creator)));watch('items','mk',[m,m-1],a=>items=a.filter(i=>nb(i.seller)));
+  un.push(onSnapshot(query(collection(db,'requests'),where('creator','==',U.uid)),s=>{inR=s.docs.map(d=>({id:d.id,...d.data()})).filter(r=>nb(r.uid));refresh()}),
   onSnapshot(query(collection(db,'requests'),where('uid','==',U.uid)),s=>{outR=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}));
 }
 function vAuth(){return `<h1>UniSide</h1><p class="sub">Find your squad on campus.</p>
   <label>Email</label><input id="a-mail" type="email" autocomplete="email"><label>Password</label><input id="a-pw" type="password" autocomplete="current-password">
-  <div class="err" id="err"></div><button class="btn" onclick="login()">Log in</button><button class="btn ghost" onclick="draft.interests=[];go('signup')">Create new account</button>`}
+  <div class="err" id="err"></div><button class="btn" onclick="login()">Log in</button><button class="btn ghost" style="border:0;margin-top:6px" onclick="resetPw()">Forgot password?</button><button class="btn ghost" onclick="draft.interests=[];go('signup')">Create new account</button>${dip?'<button class="btn alt" onclick="installApp()">Install app</button>':''}${legal()}`}
 async function login(){const e=document.getElementById('err');try{await signInWithEmailAndPassword(auth,document.getElementById('a-mail').value.trim(),document.getElementById('a-pw').value)}catch(x){e.textContent=errMsg(x)}}
 function vSignup(){const d=draft;return `<h1>UniSide</h1><p class="sub">Create your account. It takes one minute.</p>
   <div class="photo">${d.photo?`<img class="av" src="${d.photo}" alt="">`:'<div class="av">+</div>'}<label style="margin:0;cursor:pointer;color:var(--blue)">Add profile photo<input type="file" accept="image/*" hidden onchange="pic(this)"></label></div>
   <label>Name</label><input id="f-name" value="${esc(d.name||'')}">
   ${auth.currentUser?'':`<label>Email</label><input id="f-mail" type="email" value="${esc(d.email||'')}"><label>Password (6+ characters)</label><input id="f-pw" type="password" value="${esc(d.pw||'')}">`}
-  <div class="row"><div><label>Age</label><input id="f-age" type="number" min="16" max="40" value="${esc(d.age||'')}"></div>
+  <div class="row"><div><label>Age</label><input id="f-age" type="number" min="18" max="40" value="${esc(d.age||'')}"></div>
   <div><label>Gender</label><select id="f-gender">${['Male','Female','Other'].map(g=>`<option ${d.gender===g?'selected':''}>${g}</option>`).join('')}</select></div></div>
   <label>College</label><select id="f-college"><option value="">Select your college</option>${COLLEGES.map(c=>`<option ${d.college===c?'selected':''}>${c}</option>`).join('')}</select>
   <div class="row"><div><label>City</label><input id="f-city" value="${esc(d.city||'')}"></div><div><label>College ID</label><input id="f-cid" value="${esc(d.cid||'')}"></div></div>
   <label>Pick your interests</label>${chips(d.interests,'togI')}
-  <div class="err" id="err"></div><button class="btn" onclick="signup()">Join campus</button>
+  <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin-top:16px"><input type="checkbox" id="f-agree" style="width:auto;margin-top:3px"> <span>I am 18 or older and agree to the <a href="terms.html" target="_blank">Terms</a> and <a href="privacy.html" target="_blank">Privacy Policy</a></span></label><div class="err" id="err"></div><button class="btn" onclick="signup()">Join campus</button>
   ${auth.currentUser?'':`<button class="btn ghost" onclick="go('auth')">I already have an account</button>`}`}
 function keep(){const g=i=>(document.getElementById(i)||{}).value||'';Object.assign(draft,{name:g('f-name').trim(),email:g('f-mail').trim(),pw:g('f-pw'),age:g('f-age'),gender:g('f-gender'),college:g('f-college').trim(),city:g('f-city').trim(),cid:g('f-cid').trim()})}
 function togI(n){keep();const i=draft.interests.indexOf(n);i<0?draft.interests.push(n):draft.interests.splice(i,1);render()}
@@ -130,6 +133,8 @@ function pic(inp){const f=inp.files[0];if(!f)return;keep();const r=new FileReade
 async function signup(){
   keep();const d=draft,e=document.getElementById('err'),has=!!auth.currentUser;
   if(!d.name||!d.age||!d.college||!d.city||!d.cid||(!has&&(!d.email||!d.pw))){e.textContent='Fill in all the fields.';return}
+  if(parseInt(d.age)<18){e.textContent='UniSide is for students aged 18 or above.';return}
+  if(!document.getElementById('f-agree').checked){e.textContent='Please accept the Terms and Privacy Policy.';return}
   if(!d.interests.length){e.textContent='Pick at least one interest to see squads.';return}
   try{creating=1;const uid=has?auth.currentUser.uid:(await createUserWithEmailAndPassword(auth,d.email,d.pw)).user.uid;
     const p={name:d.name,age:d.age,gender:d.gender||'Male',college:d.college,city:d.city,cid:d.cid,photo:d.photo,interests:d.interests};
@@ -154,9 +159,9 @@ function card(s){
   else act=`<button class="btn sm" onclick="join('${s.id}')">Ask to join</button>`;
   return `<div class="card"><div class="sq-h"><div class="emo">${EMO[s.act]||'👥'}</div><div><div class="sq-t">${esc(s.title)}</div><div class="meta">${fmt(s.ts)} · ${esc(s.place)}</div></div></div>
   <p class="meta" style="margin:10px 0 0">${esc(s.desc)}</p><div class="bar"><i style="width:${Math.min(100,n/s.need*100)}%"></i></div>
-  <div class="foot"><span class="tag">${n}/${s.need} joined${mine?' · your squad':' · by '+esc(s.creatorName)}${s.aud!=='both'?' · '+AUD[s.aud]:''}</span>${act}</div></div>`;
+  <div class="foot"><span class="tag">${n}/${s.need} joined${mine?' · your squad':' · by '+esc(s.creatorName)}${s.aud!=='both'?' · '+AUD[s.aud]:''}</span>${act}</div>${mine?'':`<div class="tag" style="margin-top:8px"><a href="#" onclick="event.preventDefault();report('squad','${s.id}')">Report</a> · <a href="#" onclick="event.preventDefault();blockUser('${s.creator}')">Block</a></div>`}</div>`;
 }
-async function join(id){const s=sq(id);try{await setDoc(doc(db,'requests',id+'_'+U.uid),{sid:id,uid:U.uid,name:U.name,creator:s.creator,title:s.title,status:'pending'})}catch(e){alert('Could not send request. Try again.')}}
+async function join(id){const s=sq(id);try{await setDoc(doc(db,'requests',id+'_'+U.uid),{sid:id,uid:U.uid,name:U.name,creator:s.creator,title:s.title,status:'pending'})}catch(e){toast('Could not send request. Try again.')}}
 /* CREATE */
 function vCreate(){
   return `<h1>Create squad</h1><p class="sub">Tell people what you're planning.</p>
@@ -187,11 +192,11 @@ function vAlerts(){
   return `<h1>Alerts</h1><p class="sub">People who want to join or connect with you.</p>${seg}`+(inc.length?inc.map(r=>`<div class="card"><div class="sq-t">${esc(r.name)} wants to ${r.kind==='dm'?'connect':'join'}</div><div class="meta">${esc(r.title)}</div>${r.status==='pending'?`<div class="row" style="margin-top:12px"><button class="btn sm" onclick="decide('${r.id}',1)">Accept</button><button class="btn sm no" onclick="decide('${r.id}',0)">Reject</button></div>`:`<div class="tag" style="margin-top:8px">${r.status==='accepted'?'Accepted':'Rejected'}</div>`}</div>`).join(''):'<div class="empty">No alerts yet.</div>');
 }
 async function decide(id,ok){
-  const r=inR.find(x=>x.id===id);if(!r)return;if(r.kind==='dm'){try{await updateDoc(doc(db,'requests',id),{status:ok?'accepted':'rejected'})}catch(e){alert('Could not update. Try again.')}return}const s=sq(r.sid);if(!s)return;
+  const r=inR.find(x=>x.id===id);if(!r)return;if(r.kind==='dm'){try{await updateDoc(doc(db,'requests',id),{status:ok?'accepted':'rejected'})}catch(e){toast('Could not update. Try again.')}return}const s=sq(r.sid);if(!s)return;
   const yes=ok&&s.members.length<s.need,b=writeBatch(db);
   b.update(doc(db,'requests',id),{status:yes?'accepted':'rejected'});
   if(yes){b.update(doc(db,'squads',s.id),{members:arrayUnion(r.uid),['names.'+r.uid]:r.name});b.set(doc(collection(db,'squads',s.id,'chat')),{u:U.uid,n:'',t:r.name+' joined the squad',ts:Date.now(),sys:1})}
-  try{await b.commit()}catch(e){alert('Could not update. Try again.')}
+  try{await b.commit()}catch(e){toast('Could not update. Try again.')}
 }
 /* CHAT */
 function openChat(id){const s=sq(id);startChat(id,['squads',id,'chat'],s?s.title:'Squad',s?s.members.map(u=>(s.names||{})[u]||'').join(', '):'')}
@@ -203,20 +208,20 @@ function vChat(){
   <div class="msgs">${chat.length?chat.map(m=>m.sys?`<div class="m sys">${esc(m.t)}</div>`:`<div class="m ${m.u===U.uid?'me':''}"><small>${esc(m.n)}</small>${esc(m.t)}</div>`).join(''):'<div class="empty">Say hi!</div>'}</div>
   <div class="send"><input id="msg" placeholder="Message" onkeydown="if(event.key==='Enter')send()"><button class="btn sm" onclick="send()">Send</button></div>`;
 }
-async function send(){const i=document.getElementById('msg'),t=i.value.trim();if(!t)return;i.value='';try{await addDoc(collection(db,...chatPath),{u:U.uid,n:U.name,t,ts:Date.now()})}catch(e){alert('Message not sent. Try again.')}}
+async function send(){const i=document.getElementById('msg'),t=i.value.trim();if(!t)return;i.value='';try{await addDoc(collection(db,...chatPath),{u:U.uid,n:U.name,t,ts:Date.now()})}catch(e){toast('Message not sent. Try again.')}}
 /* PROFILE */
 function vProfile(){const u=U;
   if(editing)return `<h1>Edit profile</h1><div class="photo">${avatar(ed)}<label style="margin:0;cursor:pointer;color:var(--blue)">Change photo<input type="file" accept="image/*" hidden onchange="setPhoto(this)"></label></div>
   <label>Name</label><input id="e-name" value="${esc(ed.name)}"><label>City</label><input id="e-city" value="${esc(ed.city)}"><label>Interests</label>${chips(ed.interests,'togEdit')}
   <div class="err" id="err"></div><button class="btn" onclick="saveProfile()">Save</button><button class="btn ghost" onclick="cancelEdit()">Cancel</button>`;
   return `<div class="top"><h1>Me</h1><button class="btn sm ghost" onclick="startEdit()">Edit</button></div><div class="card"><div class="sq-h">${avatar(u)}<div><div class="sq-t">${esc(u.name)}</div><div class="meta">${esc(u.college)} · ${esc(u.city)}</div></div></div></div>
-  <h2>My interests</h2><div class="chips" style="margin-bottom:8px">${u.interests.map(i=>`<span class="chip on">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div><button class="btn ghost" onclick="logout()">Log out</button>`}
+  <h2>My interests</h2><div class="chips" style="margin-bottom:8px">${u.interests.map(i=>`<span class="chip on">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div><button class="btn" onclick="invite()">Invite friends</button>${dip?'<button class="btn alt" onclick="installApp()">Install app</button>':''}<button class="btn ghost" onclick="feedback()">Help and feedback</button>${(U.blocked||[]).length?'<button class="btn ghost" onclick="unblockAll()">Unblock everyone ('+U.blocked.length+')</button>':''}<button class="btn ghost" onclick="logout()">Log out</button><p class="meta" style="text-align:center;margin-top:18px"><a href="terms.html" target="_blank">Terms</a> · <a href="privacy.html" target="_blank">Privacy Policy</a> · <a href="#" onclick="event.preventDefault();delAcc()" style="color:var(--red)">Delete account</a></p>`}
 async function togMine(n){const a=U.interests,i=a.indexOf(n);i<0?a.push(n):a.length>1&&a.splice(i,1);render();try{await updateDoc(doc(db,'users',U.uid),{interests:a})}catch(e){}}
 const logout=()=>signOut(auth);
 const sameCol=x=>(x||'').trim().toLowerCase()===U.college.trim().toLowerCase();
 const shared=p=>(p.interests||[]).filter(i=>U.interests.includes(i));
 const pair=o=>[U.uid,o].sort().join('_');
-async function loadPeople(first){try{const c=[collection(db,'users'),where('college','==',U.college)];const q=!first&&lastDoc?query(...c,startAfter(lastDoc),limit(40)):query(...c,limit(40));const s=await getDocs(q);if(s.docs.length)lastDoc=s.docs[s.docs.length-1];const add=s.docs.map(d=>({...d.data(),uid:d.id})).filter(x=>x.uid!==U.uid);people=first?add:people.concat(add);more=s.docs.length===40;refresh()}catch(e){console.error(e)}}
+async function loadPeople(first){try{const c=[collection(db,'users'),where('college','==',U.college)];const q=!first&&lastDoc?query(...c,startAfter(lastDoc),limit(40)):query(...c,limit(40));const s=await getDocs(q);if(s.docs.length)lastDoc=s.docs[s.docs.length-1];const add=s.docs.map(d=>({...d.data(),uid:d.id})).filter(x=>x.uid!==U.uid&&nb(x.uid));people=first?add:people.concat(add);more=s.docs.length===40;refresh()}catch(e){console.error(e)}}
 const setHome=h=>{home=h;if(h==='people'&&!people.length)loadPeople(true);render()},setPOnly=b=>{peopleOnly=b;render()};
 const hTop=()=>`<div class="top"><div><h1>UniSide</h1><div class="meta">${esc(U.college)}</div></div>${avatar(U)}</div><div class="seg"><button class="${home==='squads'?'on':''}" onclick="setHome('squads')">👥 Squads</button><button class="${home==='people'?'on':''}" onclick="setHome('people')">🤝 Connect</button></div>`;
 function vPeople(){
@@ -229,9 +234,9 @@ function pcard(p){
   else if(r&&r.status==='pending')act=`<span class="tag">${r.uid===U.uid?'Request sent':'Wants to connect'}</span>`;
   else if(r)act='<span class="tag">Not accepted</span>';
   else act=`<button class="btn sm" onclick="connect('${p.uid}')">Connect</button>`;
-  return `<div class="card"><div class="sq-h">${avatar(p)}<div><div class="sq-t">${esc(p.name)}</div><div class="meta">${esc(p.city)} · ${sh.length?sh.length+' common interest'+(sh.length>1?'s':''):'No common interests'}</div></div></div><div class="chips" style="margin:10px 0">${(p.interests||[]).slice(0,6).map(i=>`<span class="chip ${U.interests.includes(i)?'on':''}" style="padding:4px 10px;font-size:12px">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div><div class="foot"><span></span>${act}</div></div>`;
+  return `<div class="card"><div class="sq-h">${avatar(p)}<div><div class="sq-t">${esc(p.name)}</div><div class="meta">${esc(p.city)} · ${sh.length?sh.length+' common interest'+(sh.length>1?'s':''):'No common interests'}</div></div></div><div class="chips" style="margin:10px 0">${(p.interests||[]).slice(0,6).map(i=>`<span class="chip ${U.interests.includes(i)?'on':''}" style="padding:4px 10px;font-size:12px">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div><div class="foot"><span class="tag"><a href="#" onclick="event.preventDefault();report('user','${p.uid}')">Report</a> · <a href="#" onclick="event.preventDefault();blockUser('${p.uid}')">Block</a></span>${act}</div></div>`;
 }
-async function connect(o){const p=people.find(x=>x.uid===o);try{await setDoc(doc(db,'requests','dm_'+pair(o)),{kind:'dm',uid:U.uid,name:U.name,creator:o,tname:p?p.name:'',title:'Connect chat',status:'pending'})}catch(e){alert('Could not send request. Try again.')}}
+async function connect(o){const p=people.find(x=>x.uid===o);try{await setDoc(doc(db,'requests','dm_'+pair(o)),{kind:'dm',uid:U.uid,name:U.name,creator:o,tname:p?p.name:'',title:'Connect chat',status:'pending'})}catch(e){toast('Could not send request. Try again.')}}
 /* MARKET */
 const CATS=[['Books','📚'],['Gym','🏋️'],['Furniture','🛋️'],['Electronics','🎧'],['Clothes','👕'],['Other','📦']],CE=Object.fromEntries(CATS);
 function vMarket(){
@@ -242,7 +247,7 @@ function vMarket(){
 function icard(i){
   const mine=i.seller===U.uid,n=(i.wa||'').replace(/\D/g,''),wa=n.length===10?'91'+n:n;
   const act=mine?`<div class="row">${i.sold?'':`<button class="btn sm ghost" onclick="sold('${i.id}')">Mark sold</button>`}<button class="btn sm no" onclick="delItem('${i.id}')">Delete</button></div>`:i.sold?'<span class="tag">Sold</span>':`<a class="btn sm" style="text-decoration:none" href="https://wa.me/${wa}?text=${encodeURIComponent('Hi, I saw your '+i.title+' on UniSide. Is it still available?')}" target="_blank" rel="noopener">WhatsApp seller</a>`;
-  return `<div class="card"${i.sold?' style="opacity:.6"':''}><div class="sq-h"><div class="emo">${CE[i.cat]||'📦'}</div><div><div class="sq-t">${esc(i.title)}</div><div class="meta">₹${esc(i.price)} · by ${esc(i.sellerName)}</div></div></div><p class="meta" style="margin:10px 0 12px">${esc(i.desc)}</p><div class="foot"><span class="tag">${esc(i.cat)}${i.sold?' · Sold':''}</span>${act}</div></div>`;
+  return `<div class="card"${i.sold?' style="opacity:.6"':''}><div class="sq-h"><div class="emo">${CE[i.cat]||'📦'}</div><div><div class="sq-t">${esc(i.title)}</div><div class="meta">₹${esc(i.price)} · by ${esc(i.sellerName)}</div></div></div><p class="meta" style="margin:10px 0 12px">${esc(i.desc)}</p><div class="foot"><span class="tag">${esc(i.cat)}${i.sold?' · Sold':''}${mine?'':` · <a href="#" onclick="event.preventDefault();report('item','${i.id}')">Report</a> · <a href="#" onclick="event.preventDefault();blockUser('${i.seller}')">Block</a>`}</span>${act}</div></div>`;
 }
 function vSell(){return `<h1>Sell an item</h1><p class="sub">Shown to students of your college.</p>
   <label>Category</label><select id="s-cat">${CATS.map(c=>`<option>${c[0]}</option>`).join('')}</select>
@@ -264,6 +269,19 @@ const togEdit=n=>{keepEd();const a=ed.interests,i=a.indexOf(n);i<0?a.push(n):a.l
 function setPhoto(inp){const f=inp.files[0];if(!f)return;keepEd();const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=120;const x=c.getContext('2d'),m=Math.min(im.width,im.height);x.drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,120,120);ed.photo=c.toDataURL('image/jpeg',.7);render()};im.src=r.result};r.readAsDataURL(f)}
 async function saveProfile(){keepEd();const e=document.getElementById('err');if(!ed.name.trim()||!ed.city.trim()){e.textContent='Name and city cannot be empty.';return}
   try{const d={name:ed.name.trim(),city:ed.city.trim(),photo:ed.photo,interests:ed.interests};await updateDoc(doc(db,'users',U.uid),d);Object.assign(U,d);editing=false;render()}catch(x){e.textContent='Could not save. Try again.'}}
-Object.assign(window,{setAt,setPhoto,saveProfile,startEdit,cancelEdit,togEdit,loadPeople,setHome,setPOnly,connect,openDm,sell,sold,delItem,setCat,go,togI,pic,signup,login,setTab,setOnly,join,create,decide,openChat,closeChat,send,togMine,logout,render,draft});
+const nb=x=>!(U.blocked||[]).includes(x);
+const legal=()=>`<p class="meta" style="text-align:center;margin-top:18px">By continuing you agree to our <a href="terms.html" target="_blank">Terms</a> and <a href="privacy.html" target="_blank">Privacy Policy</a></p>`;
+function toast(m){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#14182B;color:#fff;padding:10px 16px;border-radius:99px;font:600 14px system-ui;z-index:98;max-width:90%;text-align:center';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2600)}
+async function report(t,id){const l=t==='squad'?(sq(id)||{}).title:t==='item'?(items.find(i=>i.id===id)||{}).title:(people.find(p=>p.uid===id)||{}).name;const r=prompt('Why are you reporting this? (short reason)');if(!r)return;try{await addDoc(collection(db,'reports'),{by:U.uid,type:t,target:id,label:l||'',reason:r.slice(0,300),ts:Date.now()});toast('Reported. Thank you.')}catch(e){toast('Could not send report.')}}
+async function blockUser(id){if(!confirm('Block this person? You will no longer see their squads, items or requests.'))return;U.blocked=[...(U.blocked||[]),id];squads=squads.filter(s=>nb(s.creator));items=items.filter(i=>nb(i.seller));people=people.filter(p=>nb(p.uid));inR=inR.filter(r=>nb(r.uid));try{await updateDoc(doc(db,'users',U.uid),{blocked:U.blocked})}catch(e){}render();toast('Blocked')}
+async function unblockAll(){U.blocked=[];try{await updateDoc(doc(db,'users',U.uid),{blocked:[]})}catch(e){}toast('Unblocked. Reload the app to see their posts.');render()}
+async function feedback(){const m=prompt('Tell us the problem or idea');if(!m)return;try{await addDoc(collection(db,'feedback'),{by:U.uid,name:U.name,msg:m.slice(0,500),ts:Date.now()});toast('Thanks! We will look into it.')}catch(e){toast('Could not send.')}}
+async function invite(){const t='Join me on UniSide: squads, partners and a marketplace for your college.',u=location.origin;try{if(navigator.share)await navigator.share({title:'UniSide',text:t,url:u});else window.open('https://wa.me/?text='+encodeURIComponent(t+' '+u))}catch(e){}}
+let dip=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;render()});
+function installApp(){if(dip){dip.prompt();dip=null;render()}else toast('iPhone: tap Share, then Add to Home Screen')}
+async function resetPw(){const m=document.getElementById('a-mail').value.trim();if(!m){toast('Type your email first');return}try{await sendPasswordResetEmail(auth,m);toast('Reset link sent. Check your email.')}catch(e){toast('Could not send reset email.')}}
+async function delAcc(){if(!confirm('Delete your account, squads and listings permanently?'))return;const pw=prompt('Enter your password to confirm');if(!pw)return;try{const u=auth.currentUser;await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,pw));for(const [c,f] of [['squads','creator'],['items','seller']]){const q=await getDocs(query(collection(db,c),where(f,'==',U.uid)));for(const d of q.docs)await deleteDoc(d.ref)}await deleteDoc(doc(db,'users',U.uid));await deleteUser(u);toast('Account deleted')}catch(e){toast(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'?'Wrong password.':'Could not delete. Try again.')}}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+Object.assign(window,{report,blockUser,unblockAll,feedback,invite,installApp,resetPw,delAcc,toast,setAt,setPhoto,saveProfile,startEdit,cancelEdit,togEdit,loadPeople,setHome,setPOnly,connect,openDm,sell,sold,delItem,setCat,go,togI,pic,signup,login,setTab,setOnly,join,create,decide,openChat,closeChat,send,togMine,logout,render,draft});
 render();
 </script></body></html>
