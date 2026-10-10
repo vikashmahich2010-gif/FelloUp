@@ -5,9 +5,10 @@
 :root{--bg:#F2F4F8;--card:#fff;--ink:#14182B;--mute:#6B7288;--line:#E1E5EE;--blue:#2F5BFF;--lime:#C8F169;--red:#D93B4A;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1220;--card:#181C30;--ink:#EEF0F8;--mute:#9AA1BA;--line:#2A2F4A}}
 :root[data-theme="dark"]{--bg:#0F1220;--card:#181C30;--ink:#EEF0F8;--mute:#9AA1BA;--line:#2A2F4A}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);min-height:100%;-webkit-text-size-adjust:100%}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.4}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.4;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body.chat-open{overflow:hidden;height:100%;overscroll-behavior:none}
 #app{max-width:480px;margin:0 auto;padding:16px 16px 90px;min-height:100vh}
 h1{font-size:30px;font-weight:800;margin:4px 0 2px;letter-spacing:-.5px}
 h2{font-size:20px;font-weight:800;margin:0 0 12px}
@@ -37,7 +38,7 @@ textarea{min-height:80px;resize:vertical}
 .bar i{display:block;height:100%;background:var(--blue)}
 .foot{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .tag{font-size:13px;font-weight:600;color:var(--mute)}
-.nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1.5px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:90;background:var(--card);border-top:1.5px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);transform:translateZ(0);will-change:transform}
 .nav div{display:flex;max-width:480px;width:100%}
 .nav button{flex:1;background:none;border:0;color:var(--mute);font:inherit;font-size:13px;font-weight:600;padding:10px 0 12px;cursor:pointer}
 .nav button.on{color:var(--blue)}
@@ -61,7 +62,7 @@ textarea{min-height:80px;resize:vertical}
 .btn,.chip,.nav button,.fab{transition:transform .12s ease}.btn:active,.chip:active,.nav button:active,.fab:active{transform:scale(.95)}
 @keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.vin{animation:fi .28s ease both}
 .sk{height:96px;border-radius:18px;margin-bottom:12px;background:linear-gradient(90deg,var(--line) 25%,var(--card) 50%,var(--line) 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
-#app.inchat{padding-bottom:0}.chatw{display:flex;flex-direction:column;height:calc(100vh - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}.chath{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1.5px solid var(--line)}.chath .btn{flex:none}.chatw .msgs{flex:1;overflow-y:auto;margin:0;min-height:0;padding:10px 0}.chatw .send{position:static;padding:8px 0 4px}
+#app.inchat{position:fixed;z-index:100;left:50%;top:0;bottom:0;transform:translateX(-50%);width:100%;max-width:480px;min-height:0;height:100vh;height:100dvh;overflow:hidden;padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(8px + env(safe-area-inset-bottom,0px));overscroll-behavior:none}.chatw{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}.chath{display:flex;align-items:center;gap:12px;flex:0 0 auto;padding:4px 0 10px;border-bottom:1.5px solid var(--line);background:var(--bg)}.chath .btn{flex:none}.chatw .msgs{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;margin:0;min-height:0;padding:10px 0;scrollbar-gutter:stable}.chatw .send{position:relative;flex:0 0 auto;display:flex;align-items:center;gap:8px;margin:0;padding:8px 0 2px;background:var(--bg);border-top:1px solid var(--line);z-index:2}.chatw .send input{flex:1;min-width:0;width:0;margin:0}.chatw .send .btn{flex:none;margin:0;padding:11px 16px}.brandline{display:flex;align-items:center;gap:9px}.brand-mark{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:11px;background:var(--blue);box-shadow:0 4px 10px #2f5bff24}.brand-mark svg{display:block;width:24px;height:24px}.brandline h1{margin:0;font-size:27px;line-height:1.05;letter-spacing:-.8px}.brandline .meta{margin-top:4px}.nav button{min-height:60px;touch-action:manipulation}
 .splash{position:fixed;inset:0;background:#2F5BFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:200;color:#fff;font:800 28px system-ui;animation:fi .4s ease both}.splash svg{animation:pop .9s ease infinite alternate}@keyframes pop{from{transform:scale(.92)}to{transform:scale(1.06)}}
 @keyframes sr{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}@keyframes sl{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}.vf{animation:sr .26s ease both}.vb{animation:sl .26s ease both}
 .stg{animation:fi .35s ease both;animation-delay:calc(var(--i,0)*60ms)}
@@ -108,7 +109,7 @@ const refresh=()=>{syncMeta();if(['home','alerts','chat','market','chats','prof'
 function render(){
   if(booting){app.innerHTML='<div class="splash"><svg width="96" height="96" viewBox="0 0 140 140"><path d="M38 36V80a32 32 0 0 0 64 0V36" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round"/><circle cx="70" cy="60" r="13" fill="#C8F169"/></svg>UniSide</div>';return}
   const m=document.getElementById('msg'),mv=m?m.value:'',foc=m&&document.activeElement===m;
-  app.classList.toggle('inchat',v==='chat');app.innerHTML=({auth:vAuth,signup:vSignup,home:vHome,create:vCreate,alerts:vAlerts,profile:vProfile,chat:vChat,market:vMarket,sell:vSell,chats:vChats,prof:vProf,intro:vIntro,edit:vEdit,sqd:vSqd})[v]()+(U&&!['chat','intro'].includes(v)?nav():'');
+  app.classList.toggle('inchat',v==='chat');document.body.classList.toggle('chat-open',v==='chat');app.innerHTML=({auth:vAuth,signup:vSignup,home:vHome,create:vCreate,alerts:vAlerts,profile:vProfile,chat:vChat,market:vMarket,sell:vSell,chats:vChats,prof:vProf,intro:vIntro,edit:vEdit,sqd:vSqd})[v]()+(U&&!['chat','intro'].includes(v)?nav():'');
   if(v==='chat'){const n=document.getElementById('msg');if(n&&mv)n.value=mv;if(n&&foc)n.focus();const l=document.querySelector('.msgs');if(l)l.scrollTop=l.scrollHeight}
 }
 function nav(){
@@ -244,7 +245,7 @@ const shared=p=>(p.interests||[]).filter(i=>U.interests.includes(i));
 const pair=o=>[U.uid,o].sort().join('_');
 async function loadPeople(first){try{const c=[collection(db,'users'),where('college','==',U.college)];const q=!first&&lastDoc?query(...c,startAfter(lastDoc),limit(40)):query(...c,limit(40));const s=await getDocs(q);if(s.docs.length)lastDoc=s.docs[s.docs.length-1];const add=s.docs.map(d=>({...d.data(),uid:d.id})).filter(x=>x.uid!==U.uid&&nb(x.uid));pL=true;people=first?add:people.concat(add);more=s.docs.length===40;refresh()}catch(e){console.error(e)}}
 const setHome=h=>{home=h;if(h==='people'&&!people.length)loadPeople(true);render()},setPOnly=b=>{peopleOnly=b;render()};
-const hTop=()=>`<div class="top hd"><div><h1>UniSide</h1><div class="meta">${esc(U.college)}</div></div><div style="display:flex;gap:10px;align-items:center"><button class="btn sm ghost" onclick="go('chats')" style="position:relative">${IC.chat}${chatDot()}</button>${avatar(U)}</div></div><div class="seg"><button class="${home==='squads'?'on':''}" onclick="setHome('squads')">👥 Squads</button><button class="${home==='people'?'on':''}" onclick="setHome('people')">🤝 Connect</button></div>`;
+const hTop=()=>`<div class="top hd"><div><div class="brandline"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M8 7v10a8 8 0 0 0 16 0V7" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="16" cy="14" r="3" fill="#C8F169"/></svg></span><div><h1>UniSide</h1><div class="meta">${esc(U.college)}</div></div></div></div><div style="display:flex;gap:10px;align-items:center"><button class="btn sm ghost" onclick="go('chats')" style="position:relative" aria-label="Open chats">${IC.chat}${chatDot()}</button>${avatar(U)}</div></div><div class="seg"><button class="${home==='squads'?'on':''}" onclick="setHome('squads')">👥 Squads</button><button class="${home==='people'?'on':''}" onclick="setHome('people')">🤝 Connect</button></div>`;
 function vPeople(){
   const list=people.filter(p=>!peopleOnly||shared(p).length).sort((a,b)=>shared(b).length-shared(a).length);
   return hTop()+`<div class="sub2"><button class="chip ${peopleOnly?'on':''}" onclick="setPOnly(true)">Common interests</button><button class="chip ${!peopleOnly?'on':''}" onclick="setPOnly(false)">Everyone at my college</button></div>`+(!pL?SK:list.length?list.map(pcard).join(''):'<div class="empty">No one here yet.<br>Invite friends from your college to join UniSide.<br><button class="btn" onclick="invite()">Invite friends</button></div>')+(more?'<button class="btn ghost" onclick="loadPeople()">Show more people</button>':'');
