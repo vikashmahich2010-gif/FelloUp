@@ -54,6 +54,15 @@ textarea{min-height:80px;resize:vertical}
 .seg{display:flex;background:var(--line);border-radius:14px;padding:4px;margin-bottom:14px}.seg button{flex:1;border:0;background:none;color:var(--mute);font:inherit;font-weight:800;padding:10px;border-radius:11px;cursor:pointer}.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px #0002}
 .sub2{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}.sub2 .chip{font-size:13px;padding:6px 12px}
 .spin{width:36px;height:36px;border:4px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:sp 1s linear infinite;margin:40vh auto}@keyframes sp{to{transform:rotate(360deg)}}
+.nav b{display:flex;justify-content:center;align-items:center;width:54px;height:30px;margin:0 auto 2px;border-radius:99px;font-size:inherit}.nav button.on b{background:rgba(47,91,255,.14)}
+.sq{display:flex;gap:12px}.sqtime{flex:none;width:60px;text-align:center;background:var(--bg);border-radius:12px;padding:8px 4px;align-self:flex-start}.sqtime b{display:block;font-size:15px}.sqtime span{font-size:12px;color:var(--mute)}.sqbody{flex:1;min-width:0}
+.mav{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;color:#fff;font:800 12px system-ui;border:2px solid var(--card);margin-left:-8px;font-style:normal}.mav:first-child{margin-left:0}
+.fab{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;border:0;background:var(--blue);color:#fff;font-size:32px;line-height:1;box-shadow:0 6px 16px rgba(47,91,255,.4);cursor:pointer;z-index:30}
+.btn,.chip,.nav button,.fab{transition:transform .12s ease}.btn:active,.chip:active,.nav button:active,.fab:active{transform:scale(.95)}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.vin{animation:fi .28s ease both}
+.sk{height:96px;border-radius:18px;margin-bottom:12px;background:linear-gradient(90deg,var(--line) 25%,var(--card) 50%,var(--line) 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
+#app.inchat{padding-bottom:0}.chatw{display:flex;flex-direction:column;height:calc(100vh - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}.chath{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1.5px solid var(--line)}.chath .btn{flex:none}.chatw .msgs{flex:1;overflow-y:auto;margin:0;min-height:0;padding:10px 0}.chatw .send{position:static;padding:8px 0 4px}
+.splash{position:fixed;inset:0;background:#2F5BFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:200;color:#fff;font:800 28px system-ui;animation:fi .4s ease both}.splash svg{animation:pop .9s ease infinite alternate}@keyframes pop{from{transform:scale(.92)}to{transform:scale(1.06)}}
 </style>
 </head><body><div id="app"></div>
 <script type="module">
@@ -83,33 +92,34 @@ const avatar=u=>u.photo?`<img class="av" src="${u.photo}" alt="">`:`<div class="
 
 const sq=id=>squads.find(s=>s.id===id);
 const errMsg=e=>({'auth/invalid-credential':'Wrong email or password.','auth/email-already-in-use':'This email already has an account. Log in instead.','auth/weak-password':'Password must be at least 6 characters.','auth/invalid-email':'Enter a valid email.','auth/network-request-failed':'No internet connection.'})[e.code]||(console.error(e),'Something went wrong. Try again.');
-const go=x=>{v=x;render();window.scrollTo(0,0)};
-const refresh=()=>{syncMeta();if(['home','alerts','chat','market','chats','prof'].includes(v))render()};
+const MAIN=['home','market','alerts','profile'];
+const go=x=>{const st={v:x};if(MAIN.includes(x))history.replaceState(st,'');else history.pushState(st,'');v=x;render();window.scrollTo(0,0);app.classList.remove('vin');void app.offsetWidth;app.classList.add('vin')};
+const refresh=()=>{syncMeta();if(['home','alerts','chat','market','chats','prof','sqd'].includes(v))render()};
 function render(){
-  if(booting){app.innerHTML='<div class="spin"></div>';return}
+  if(booting){app.innerHTML='<div class="splash"><svg width="96" height="96" viewBox="0 0 140 140"><path d="M38 36V80a32 32 0 0 0 64 0V36" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round"/><circle cx="70" cy="60" r="13" fill="#C8F169"/></svg>UniSide</div>';return}
   const m=document.getElementById('msg'),mv=m?m.value:'',foc=m&&document.activeElement===m;
-  app.innerHTML=({auth:vAuth,signup:vSignup,home:vHome,create:vCreate,alerts:vAlerts,profile:vProfile,chat:vChat,market:vMarket,sell:vSell,chats:vChats,prof:vProf,intro:vIntro,edit:vEdit})[v]()+(U&&!['chat','intro'].includes(v)?nav():'');
-  if(v==='chat'){const n=document.getElementById('msg');if(n&&mv)n.value=mv;if(n&&foc)n.focus();const l=document.querySelector('.msgs');l&&l.lastElementChild&&l.lastElementChild.scrollIntoView()}
+  app.classList.toggle('inchat',v==='chat');app.innerHTML=({auth:vAuth,signup:vSignup,home:vHome,create:vCreate,alerts:vAlerts,profile:vProfile,chat:vChat,market:vMarket,sell:vSell,chats:vChats,prof:vProf,intro:vIntro,edit:vEdit,sqd:vSqd})[v]()+(U&&!['chat','intro'].includes(v)?nav():'');
+  if(v==='chat'){const n=document.getElementById('msg');if(n&&mv)n.value=mv;if(n&&foc)n.focus();const l=document.querySelector('.msgs');if(l)l.scrollTop=l.scrollHeight}
 }
 function nav(){
   const n=inR.filter(r=>r.status==='pending').length;
-  const t=(k,i,l)=>`<button class="${v===k?'on':''}" onclick="go('${k}')"><b>${i}</b>${l}${k==='alerts'&&n?`<span class="dot">${n}</span>`:''}</button>`;
-  return `<div class="nav"><div>${t('home','🏠','Home')}${t('create','➕','Squad')}${t('market','🛍️','Market')}${t('alerts','🔔','Alerts')}${t('profile','👤','Me')}</div></div>`;
+  const t=(k,l)=>`<button class="${v===k?'on':''}" onclick="go('${k}')"><b>${IC[k]}</b>${l}${k==='alerts'&&n?`<span class="dot">${n}</span>`:''}</button>`;
+  return `<div class="nav"><div>${t('home','Home')}${t('market','Market')}${t('alerts','Alerts')}${t('profile','Me')}</div></div>`;
 }
 function chips(sel,fn){return Object.entries(GROUPS).map(([g,l])=>`<div class="meta" style="margin:12px 0 6px;font-weight:600">${g}</div><div class="chips">${l.map(([n,e])=>`<button type="button" class="chip ${sel.includes(n)?'on':''}" onclick="${fn}('${n}')">${e} ${n}</button>`).join('')}</div>`).join('')}
 
 /* AUTH */
 onAuthStateChanged(auth,async u=>{
   if(creating)return;
-  if(!u){U=null;un.forEach(f=>f());un=[];Object.values(metaUn).forEach(f=>f());metaUn={};meta={};booting=false;v='auth';render();return}
+  if(!u){U=null;un.forEach(f=>f());un=[];Object.values(metaUn).forEach(f=>f());metaUn={};meta={};squads=[];items=[];people=[];inR=[];outR=[];sqL=itL=pL=false;v='auth';endBoot();return}
   try{const d=await getDoc(doc(db,'users',u.uid));
     if(d.exists()){U={...d.data(),uid:u.uid};start();v=ls.get('intro')?'home':'intro'}else v='signup'}catch(e){console.error(e);v='auth'}
-  booting=false;render();
+  endBoot();
 });
 function start(){
   un.forEach(f=>f());un=[];loadPeople(true);
   const now=Date.now(),w=wk(now),m=Math.floor(now/2592e6);
-  watch('squads','wk',[w,w+1],a=>squads=a.filter(s=>nb(s.creator)));watch('items','mk',[m,m-1],a=>items=a.filter(i=>nb(i.seller)));
+  watch('squads','wk',[w,w+1],a=>{sqL=true;squads=a.filter(s=>nb(s.creator))});watch('items','mk',[m,m-1],a=>{itL=true;items=a.filter(i=>nb(i.seller))});
   un.push(onSnapshot(query(collection(db,'requests'),where('creator','==',U.uid)),s=>{inR=s.docs.map(d=>({id:d.id,...d.data()})).filter(r=>nb(r.uid));refresh()}),
   onSnapshot(query(collection(db,'requests'),where('uid','==',U.uid)),s=>{outR=s.docs.map(d=>({id:d.id,...d.data()}));refresh()}));
 }
@@ -150,42 +160,40 @@ function vHome(){
   if(home==='people')return vPeople();
   const base=squads.filter(s=>s.members.includes(U.uid)||(allowed(s)&&(!only||U.interests.includes(s.act))));
   const cnt=t=>base.filter(s=>inTab(s,t)).length,list=base.filter(s=>inTab(s,tab)).sort((a,b)=>a.ts-b.ts);
-  return hTop()+`<div class="sub2"><button class="chip ${tab==='today'?'on':''}" onclick="setTab('today')">Today (${cnt('today')})</button><button class="chip ${tab==='week'?'on':''}" onclick="setTab('week')">This week (${cnt('week')})</button><select onchange="setOnly(this.value==='1')" style="width:auto;padding:6px 10px;font-size:13px;margin-left:auto"><option value="1" ${only?'selected':''}>My interests</option><option value="0" ${!only?'selected':''}>All squads</option></select></div>`+(list.length?list.map(card).join(''):`<div class="empty">${tab==='today'?'Nothing planned for today.':'Nothing planned this week.'}<br>Create a squad or check the other tab.<br><button class="btn" onclick="go('create')">Create the first squad</button></div>`);
+  return hTop()+`<div class="sub2"><button class="chip ${tab==='today'?'on':''}" onclick="setTab('today')">Today (${cnt('today')})</button><button class="chip ${tab==='week'?'on':''}" onclick="setTab('week')">This week (${cnt('week')})</button><select onchange="setOnly(this.value==='1')" style="width:auto;padding:6px 10px;font-size:13px;margin-left:auto"><option value="1" ${only?'selected':''}>My interests</option><option value="0" ${!only?'selected':''}>All squads</option></select></div>`+(!sqL?SK:list.length?list.map(card).join(''):`<div class="empty">${tab==='today'?'Nothing planned for today.':'Nothing planned this week.'}<br>Create a squad or check the other tab.<br><button class="btn" onclick="go('create')">Create the first squad</button></div>`)+FAB;
 }
 const setTab=t=>{tab=t;render()},setOnly=b=>{only=b;render()};
 function card(s){
-  const n=s.members.length,mine=s.creator===U.uid,mem=s.members.includes(U.uid),rq=outR.find(r=>r.sid===s.id);
+  const n=s.members.length,mine=s.creator===U.uid,mem=s.members.includes(U.uid),rq=outR.find(r=>r.sid===s.id),f=fmt(s.ts).split(', '),tm=f.pop(),dy=f.join(', '),col=GC[grp(s.act)]||'#2F5BFF',nm=Object.values(s.names||{});
   let act;
   if(mem)act=`<button class="btn sm alt" onclick="openChat('${s.id}')">Open chat</button>`;
   else if(rq)act=`<span class="tag">${rq.status==='pending'?'Request sent':rq.status==='accepted'?'You left':'Not accepted'}</span>`;
-  else if(n>=s.need)act=`<span class="tag">Squad full</span>`;
+  else if(n>=s.need)act='<span class="tag">Squad full</span>';
   else act=`<button class="btn sm" onclick="join('${s.id}')">Ask to join</button>`;
-  return `<div class="card"><div class="sq-h"><div class="emo">${EMO[s.act]||'👥'}</div><div><div class="sq-t">${esc(s.title)}</div><div class="meta">${fmt(s.ts)} · ${esc(s.place)}</div>${sb(s)}</div></div>
-  <p class="meta" style="margin:10px 0 0">${esc(s.desc)}</p><p class="meta" style="margin:4px 0 0">👥 ${memNames(s)}</p><div class="bar"><i style="width:${Math.min(100,n/s.need*100)}%"></i></div>
-  <div class="foot"><span class="tag">${n}/${s.need} joined${mine?' · your squad':' · by '+esc(s.creatorName)}${s.aud!=='both'?' · '+AUD[s.aud]:''}</span>${act}</div>${mine?`<div class="tag" style="margin-top:8px"><a href="#" onclick="event.preventDefault();editSq('${s.id}')">Edit</a> · <a href="#" style="color:var(--red)" onclick="event.preventDefault();cancelSq('${s.id}')">Cancel squad</a></div>`:`<div class="tag" style="margin-top:8px">${mem?`<a href="#" onclick="event.preventDefault();leaveSq('${s.id}')">Leave</a> · `:''}<a href="#" onclick="event.preventDefault();report('squad','${s.id}')">Report</a> · <a href="#" onclick="event.preventDefault();blockUser('${s.creator}')">Block</a></div>`}</div>`;
+  const links=mine?`<a href="#" onclick="event.preventDefault();editSq('${s.id}')">Edit</a> · <a href="#" style="color:var(--red)" onclick="event.preventDefault();cancelSq('${s.id}')">Cancel squad</a>`:`${mem?`<a href="#" onclick="event.preventDefault();leaveSq('${s.id}')">Leave</a> · `:''}<a href="#" onclick="event.preventDefault();report('squad','${s.id}')">Report</a> · <a href="#" onclick="event.preventDefault();blockUser('${s.creator}')">Block</a>`;
+  return `<div class="card sq" style="border-left:5px solid ${col}"><div class="sqtime"><b>${tm}</b><span>${esc(dy)}</span></div><div class="sqbody"><div style="cursor:pointer" onclick="showSq('${s.id}')"><div class="sq-t">${EMO[s.act]||''} ${esc(s.title)}</div><div class="meta">📍 ${esc(s.place)}</div>${sb(s)}<p class="meta" style="margin:8px 0 0">${esc(s.desc)}</p></div><div style="display:flex;align-items:center;gap:8px;margin:10px 0"><span>${nm.slice(0,4).map((x,i)=>`<i class="mav" style="background:${MC[i%4]}">${esc((x||'?')[0].toUpperCase())}</i>`).join('')}</span><span class="tag">${memNames(s)} · ${n}/${s.need}${s.aud!=='both'?' · '+AUD[s.aud]:''}</span></div><div class="foot"><span class="tag">${mine?'Your squad':'by '+esc(s.creatorName)}</span>${act}</div><div class="tag" style="margin-top:8px">${links}</div></div></div>`;
 }
 async function join(id){if(!tip())return;const s=sq(id);try{await setDoc(doc(db,'requests',id+'_'+U.uid),{sid:id,uid:U.uid,name:U.name,creator:s.creator,title:s.title,status:'pending'})}catch(e){toast('Could not send request. Try again.')}}
 /* CREATE */
-function vCreate(){
-  return `<h1>Create squad</h1><p class="sub">Tell people what you're planning.</p>
-  <label>Activity</label><select id="c-act">${Object.entries(GROUPS).map(([g,l])=>`<optgroup label="${g}">${l.map(([n,e])=>`<option>${n}</option>`).join('')}</optgroup>`).join('')}</select>
-  <label>Squad title</label><input id="c-title" placeholder="e.g. Movie night">
-  <label>Date and time (next 7 days)</label><input id="c-when" type="datetime-local" min="${lt(Date.now())}" max="${lt(Date.now()+7*D)}">
-  <label>Place</label><input id="c-place" placeholder="e.g. College ground">
-  <label>People needed (including you)</label><input id="c-need" type="number" min="2" max="50" value="5">
-  <label>Who can join</label><select id="c-aud"><option value="both">Everyone</option><option value="women">Women only</option><option value="men">Men only</option></select>
-  <label>Description</label><textarea id="c-desc" placeholder="Anything people should know"></textarea>
-  <div class="err" id="err"></div><button class="btn" onclick="create()">Create squad</button>`;
-}
+function vCreate(){return `<div class="top"><h1>Create squad</h1><button class="btn sm ghost" onclick="back()">Back</button></div>
+<label>Activity</label><select onchange="setCfq('act',this.value)">${Object.entries(GROUPS).map(([g,l])=>`<optgroup label="${g}">${l.map(([n])=>`<option ${cf.act===n?'selected':''}>${n}</option>`).join('')}</optgroup>`).join('')}</select>
+<label>Title</label><input value="${esc(cf.title)}" placeholder="e.g. Evening cricket" oninput="setCfq('title',this.value)">
+<label>When</label><div class="chips">${DAYS.map(d=>ch(cf.day===d[0],`setCf('day',${typeof d[0]==='string'?`'${d[0]}'`:d[0]})`,d[1])).join('')}</div>${cf.day==='dt'?`<input type="date" style="margin-top:8px" value="${cf.d2}" min="${lt(Date.now()).slice(0,10)}" max="${lt(Date.now()+6*D).slice(0,10)}" onchange="setCfq('d2',this.value)">`:''}
+<div class="chips" style="margin-top:8px">${TIMES.map(t=>ch(cf.time===t[0],`setCf('time','${t[0]}')`,t[1])).join('')}</div><input type="time" style="margin-top:8px" value="${cf.time}" onchange="setCf('time',this.value)">
+<label>Place</label><div class="chips">${PLACES.map(x=>ch(cf.place===x,`setCf('place','${x}')`,x)).join('')}</div><input style="margin-top:8px" value="${esc(cf.place)}" placeholder="Or type a place" oninput="setCfq('place',this.value)">
+<label>People needed (including you)</label><div style="display:flex;align-items:center;gap:16px"><button type="button" class="btn sm ghost" onclick="stepN(-1)">−</button><b style="font-size:20px">${cf.need}</b><button type="button" class="btn sm ghost" onclick="stepN(1)">+</button></div>
+<label>Who can join</label><select onchange="setCfq('aud',this.value)"><option value="both" ${cf.aud==='both'?'selected':''}>Everyone</option><option value="women" ${cf.aud==='women'?'selected':''}>Women only</option><option value="men" ${cf.aud==='men'?'selected':''}>Men only</option></select>
+<label>Description</label><textarea oninput="setCfq('desc',this.value)" placeholder="Anything people should know">${esc(cf.desc)}</textarea>
+<div class="err" id="err"></div><button class="btn" onclick="create()">Create squad</button>`}
 
-async function create(){
-  const g=i=>document.getElementById(i).value.trim(),e=document.getElementById('err');
-  const w=g('c-when'),need=parseInt(g('c-need')),aud=g('c-aud'),ts=new Date(w).getTime(),gen=U.gender;
-  if(!g('c-title')||!w||!g('c-place')||!need||need<2){e.textContent='Add a title, time, place and at least 2 people.';return}
-  if(ts<Date.now()||ts>Date.now()+7*D+H){e.textContent='Pick a time within the next 7 days.';return}
+async function create(){const e=document.getElementById('err'),ts=cfTs(),aud=cf.aud,gen=U.gender;
+  if(!cf.title.trim()||!cf.place.trim()||isNaN(ts)){e.textContent='Add a title, day, time and place.';return}
+  if(ts<Date.now()){e.textContent='That time has already passed. Pick a later time.';return}
+  if(ts>Date.now()+7*D+H){e.textContent='Pick a time within the next 7 days.';return}
   if((aud==='women'&&gen!=='Female')||(aud==='men'&&gen!=='Male')){e.textContent=AUD[aud]+' squads can only be created by members of that group.';return}
-  try{updateDoc(doc(db,'users',U.uid),{made:increment(1)}).catch(()=>{});U.made=(U.made||0)+1;await addDoc(collection(db,'squads'),{act:g('c-act'),college:U.college,wk:wk(ts),title:g('c-title'),ts,place:g('c-place'),need,aud,desc:g('c-desc')||'No description added.',creator:U.uid,creatorName:U.name,members:[U.uid],names:{[U.uid]:U.name}});
-    tab=sameDay(ts,Date.now())?'today':'week';go('home')}catch(x){e.textContent='Could not create the squad. Try again.'}
+  try{updateDoc(doc(db,'users',U.uid),{made:increment(1)}).catch(()=>{});U.made=(U.made||0)+1;
+    await addDoc(collection(db,'squads'),{act:cf.act,college:U.college,wk:wk(ts),title:cf.title.trim(),ts,place:cf.place.trim(),need:cf.need,aud,desc:cf.desc.trim()||'No description added.',creator:U.uid,creatorName:U.name,members:[U.uid],names:{[U.uid]:U.name}});
+    tab=sameDay(ts,Date.now())?'today':'week';cf={...CF0};back();toast('Squad created')}catch(x){e.textContent='Could not create the squad. Try again.'}
 }
 /* ALERTS */
 function vAlerts(){
@@ -205,11 +213,11 @@ async function decide(id,ok){
 function openChat(id){const s=sq(id);startChat(id,['squads',id,'chat'],s?s.title:'Squad',s?s.members.map(u=>(s.names||{})[u]||'').join(', '):'')}
 function openDm(o,nm){const p=people.find(x=>x.uid===o);startChat(pair(o),['dms',pair(o),'chat'],nm||(p?p.name:'Chat'),'Connect')}
 function startChat(id,path,t,sub){chatId=id;chatPath=path;chatTitle=t;chatSub=sub;chat=[];unChat&&unChat();unChat=onSnapshot(query(collection(db,...path),orderBy('ts')),s=>{chat=s.docs.map(d=>d.data());markSeen(chatId);refresh()},e=>console.error(e));markSeen(id);go('chat')}
-function closeChat(){unChat&&unChat();unChat=null;go('home')}
+function closeChat(){back()}
 function vChat(){
-  return `<div class="top"><button class="btn sm ghost" onclick="closeChat()">Back</button><div style="text-align:right"><div class="sq-t">${esc(chatTitle)}</div><div class="meta">${esc(chatSub)}</div></div></div>
-  <div class="msgs">${chat.length?chat.map(m=>m.sys?`<div class="m sys">${esc(m.t)}</div>`:`<div class="m ${m.u===U.uid?'me':''}"><small>${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'})}</small>${esc(m.t)}</div>`).join(''):'<div class="empty">Say hi!</div>'}</div>
-  <div class="send"><input id="msg" placeholder="Message" onkeydown="if(event.key==='Enter')send()"><button class="btn sm" onclick="send()">Send</button></div>`;
+  return `<div class="chatw"><div class="chath"><button class="btn sm ghost" onclick="closeChat()">←</button><div style="min-width:0"><div class="sq-t" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(chatTitle)}</div><div class="meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(chatSub)}</div></div></div>
+  <div class="msgs">${chat.length?chat.map(m=>{const t=new Date(m.ts).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});return m.sys?`<div class="m sys">${esc(m.t)}</div>`:`<div class="m ${m.u===U.uid?'me':''}"><small>${m.u===U.uid?'':esc(m.n)+' · '}${t}</small>${esc(m.t)}</div>`}).join(''):'<div class="empty">Say hi!</div>'}</div>
+  <div class="send"><input id="msg" placeholder="Message" onkeydown="if(event.key==='Enter')send()"><button class="btn sm" onclick="send()">Send</button></div></div>`;
 }
 async function send(){const i=document.getElementById('msg'),t=i.value.trim();if(!t)return;i.value='';try{await addDoc(collection(db,...chatPath),{u:U.uid,n:U.name,t,ts:Date.now()});setDoc(doc(db,'meta',chatId),{lm:Date.now(),u:U.uid,n:U.name}).catch(()=>{});markSeen(chatId)}catch(e){toast('Message not sent. Try again.')}}
 /* PROFILE */
@@ -218,18 +226,18 @@ function vProfile(){const u=U;
   <label>Name</label><input id="e-name" value="${esc(ed.name)}"><label>City</label><input id="e-city" value="${esc(ed.city)}"><label>About me</label><textarea id="e-about" maxlength="120">${esc(ed.about||'')}</textarea><label>Interests</label>${chips(ed.interests,'togEdit')}
   <div class="err" id="err"></div><button class="btn" onclick="saveProfile()">Save</button><button class="btn ghost" onclick="cancelEdit()">Cancel</button>`;
   return `<div class="top"><h1>Me</h1><button class="btn sm ghost" onclick="startEdit()">Edit</button></div><div class="card"><div class="sq-h">${avatar(u)}<div><div class="sq-t">${esc(u.name)}</div><div class="meta">${esc(u.college)} · ${esc(u.city)}</div></div></div></div>
-  ${u.about?`<p class="meta" style="margin:-4px 0 12px">${esc(u.about)}</p>`:''}${badges()}<h2>My interests</h2><div class="chips" style="margin-bottom:8px">${u.interests.map(i=>`<span class="chip on">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div><button class="btn" onclick="invite()">Invite friends</button>${dip?'<button class="btn alt" onclick="installApp()">Install app</button>':''}<button class="btn ghost" onclick="feedback()">Help and feedback</button>${(U.blocked||[]).length?'<button class="btn ghost" onclick="unblockAll()">Unblock everyone ('+U.blocked.length+')</button>':''}<button class="btn ghost" onclick="logout()">Log out</button><p class="meta" style="text-align:center;margin-top:18px"><a href="terms.html" target="_blank">Terms</a> · <a href="privacy.html" target="_blank">Privacy Policy</a> · <a href="#" onclick="event.preventDefault();delAcc()" style="color:var(--red)">Delete account</a></p>`}
+  ${u.about?`<p class="meta" style="margin:-4px 0 12px">${esc(u.about)}</p>`:''}${completion()}${badges()}<h2>My interests</h2><div class="chips" style="margin-bottom:8px">${u.interests.map(i=>`<span class="chip on">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div><button class="btn" onclick="invite()">Invite friends</button>${dip?'<button class="btn alt" onclick="installApp()">Install app</button>':''}<button class="btn ghost" onclick="feedback()">Help and feedback</button>${(U.blocked||[]).length?'<button class="btn ghost" onclick="unblockAll()">Unblock everyone ('+U.blocked.length+')</button>':''}<button class="btn ghost" onclick="logout()">Log out</button><p class="meta" style="text-align:center;margin-top:18px"><a href="terms.html" target="_blank">Terms</a> · <a href="privacy.html" target="_blank">Privacy Policy</a> · <a href="#" onclick="event.preventDefault();delAcc()" style="color:var(--red)">Delete account</a></p>`}
 async function togMine(n){const a=U.interests,i=a.indexOf(n);i<0?a.push(n):a.length>1&&a.splice(i,1);render();try{await updateDoc(doc(db,'users',U.uid),{interests:a})}catch(e){}}
 const logout=()=>signOut(auth);
 const sameCol=x=>(x||'').trim().toLowerCase()===U.college.trim().toLowerCase();
 const shared=p=>(p.interests||[]).filter(i=>U.interests.includes(i));
 const pair=o=>[U.uid,o].sort().join('_');
-async function loadPeople(first){try{const c=[collection(db,'users'),where('college','==',U.college)];const q=!first&&lastDoc?query(...c,startAfter(lastDoc),limit(40)):query(...c,limit(40));const s=await getDocs(q);if(s.docs.length)lastDoc=s.docs[s.docs.length-1];const add=s.docs.map(d=>({...d.data(),uid:d.id})).filter(x=>x.uid!==U.uid&&nb(x.uid));people=first?add:people.concat(add);more=s.docs.length===40;refresh()}catch(e){console.error(e)}}
+async function loadPeople(first){try{const c=[collection(db,'users'),where('college','==',U.college)];const q=!first&&lastDoc?query(...c,startAfter(lastDoc),limit(40)):query(...c,limit(40));const s=await getDocs(q);if(s.docs.length)lastDoc=s.docs[s.docs.length-1];const add=s.docs.map(d=>({...d.data(),uid:d.id})).filter(x=>x.uid!==U.uid&&nb(x.uid));pL=true;people=first?add:people.concat(add);more=s.docs.length===40;refresh()}catch(e){console.error(e)}}
 const setHome=h=>{home=h;if(h==='people'&&!people.length)loadPeople(true);render()},setPOnly=b=>{peopleOnly=b;render()};
-const hTop=()=>`<div class="top"><div><h1>UniSide</h1><div class="meta">${esc(U.college)}</div></div><div style="display:flex;gap:10px;align-items:center"><button class="btn sm ghost" onclick="go('chats')" style="position:relative">💬${chatDot()}</button>${avatar(U)}</div></div><div class="seg"><button class="${home==='squads'?'on':''}" onclick="setHome('squads')">👥 Squads</button><button class="${home==='people'?'on':''}" onclick="setHome('people')">🤝 Connect</button></div>`;
+const hTop=()=>`<div class="top"><div><h1>UniSide</h1><div class="meta">${esc(U.college)}</div></div><div style="display:flex;gap:10px;align-items:center"><button class="btn sm ghost" onclick="go('chats')" style="position:relative">${IC.chat}${chatDot()}</button>${avatar(U)}</div></div><div class="seg"><button class="${home==='squads'?'on':''}" onclick="setHome('squads')">👥 Squads</button><button class="${home==='people'?'on':''}" onclick="setHome('people')">🤝 Connect</button></div>`;
 function vPeople(){
   const list=people.filter(p=>!peopleOnly||shared(p).length).sort((a,b)=>shared(b).length-shared(a).length);
-  return hTop()+`<div class="sub2"><button class="chip ${peopleOnly?'on':''}" onclick="setPOnly(true)">Common interests</button><button class="chip ${!peopleOnly?'on':''}" onclick="setPOnly(false)">Everyone at my college</button></div>`+(list.length?list.map(pcard).join(''):'<div class="empty">No one here yet.<br>Invite friends from your college to join UniSide.<br><button class="btn" onclick="invite()">Invite friends</button></div>')+(more?'<button class="btn ghost" onclick="loadPeople()">Show more people</button>':'');
+  return hTop()+`<div class="sub2"><button class="chip ${peopleOnly?'on':''}" onclick="setPOnly(true)">Common interests</button><button class="chip ${!peopleOnly?'on':''}" onclick="setPOnly(false)">Everyone at my college</button></div>`+(!pL?SK:list.length?list.map(pcard).join(''):'<div class="empty">No one here yet.<br>Invite friends from your college to join UniSide.<br><button class="btn" onclick="invite()">Invite friends</button></div>')+(more?'<button class="btn ghost" onclick="loadPeople()">Show more people</button>':'');
 }
 function pcard(p){
   const r=inR.concat(outR).find(x=>x.id==='dm_'+pair(p.uid)),sh=shared(p);let act;
@@ -245,7 +253,7 @@ const CATS=[['Books','📚'],['Gym','🏋️'],['Furniture','🛋️'],['Electro
 function vMarket(){
   const list=items.filter(i=>sameCol(i.college)&&(cat==='All'||i.cat===cat)).sort((a,b)=>b.ts-a.ts);
   return `<div class="top"><div><h1>Market</h1><div class="meta">${esc(U.college)}</div></div><button class="btn sm" onclick="go('sell')">Sell</button></div>
-  <div class="chips" style="margin-bottom:14px">${['All',...CATS.map(c=>c[0])].map(c=>`<button class="chip ${cat===c?'on':''}" onclick="setCat('${c}')">${c}</button>`).join('')}</div>`+(list.length?list.map(icard).join(''):'<div class="empty">Nothing listed yet.<br>Sell your old books or gym gear.<br><button class="btn" onclick="go(\'sell\')">List an item</button></div>');
+  <div class="chips" style="margin-bottom:14px">${['All',...CATS.map(c=>c[0])].map(c=>`<button class="chip ${cat===c?'on':''}" onclick="setCat('${c}')">${c}</button>`).join('')}</div>`+(!itL?SK:list.length?list.map(icard).join(''):'<div class="empty">Nothing listed yet.<br>Sell your old books or gym gear.<br><button class="btn" onclick="go(\'sell\')">List an item</button></div>');
 }
 function icard(i){
   const mine=i.seller===U.uid,n=(i.wa||'').replace(/\D/g,''),wa=n.length===10?'91'+n:n;
@@ -261,7 +269,7 @@ function vSell(){return `<h1>Sell an item</h1><p class="sub">Shown to students o
   <div class="err" id="err"></div><button class="btn" onclick="sell()">List item</button><button class="btn ghost" onclick="go('market')">Cancel</button>`}
 async function sell(){const g=i=>document.getElementById(i).value.trim(),e=document.getElementById('err'),wa=g('s-wa').replace(/\D/g,'');
   if(!g('s-title')||!g('s-price')||wa.length<10){e.textContent='Add item name, price and a valid WhatsApp number.';return}
-  try{await addDoc(collection(db,'items'),{cat:g('s-cat'),cond:g('s-cond'),photo:spic,mk:Math.floor(Date.now()/2592e6),title:g('s-title'),price:g('s-price'),desc:g('s-desc')||'No description added.',wa,seller:U.uid,sellerName:U.name,college:U.college,ts:Date.now(),sold:false});spic='';go('market')}catch(x){e.textContent='Could not list the item. Try again.'}}
+  try{await addDoc(collection(db,'items'),{cat:g('s-cat'),cond:g('s-cond'),photo:spic,mk:Math.floor(Date.now()/2592e6),title:g('s-title'),price:g('s-price'),desc:g('s-desc')||'No description added.',wa,seller:U.uid,sellerName:U.name,college:U.college,ts:Date.now(),sold:false});spic='';back()}catch(x){e.textContent='Could not list the item. Try again.'}}
 const sold=async id=>{try{await updateDoc(doc(db,'items',id),{sold:true})}catch(e){}},delItem=async id=>{if(confirm('Delete this listing?'))try{await deleteDoc(doc(db,'items',id))}catch(e){}},setCat=c=>{cat=c;render()};
 let ed={},more=false,atab='in',editing=false,lastDoc=null;
 const wk=t=>Math.floor(t/6048e5),setAt=t=>{atab=t;render()};
@@ -285,6 +293,28 @@ function installApp(){if(dip){dip.prompt();dip=null;render()}else toast('iPhone:
 async function resetPw(){const m=document.getElementById('a-mail').value.trim();if(!m){toast('Type your email first');return}try{await sendPasswordResetEmail(auth,m);toast('Reset link sent. Check your email.')}catch(e){toast('Could not send reset email.')}}
 async function delAcc(){if(!confirm('Delete your account, squads and listings permanently?'))return;const pw=prompt('Enter your password to confirm');if(!pw)return;try{const u=auth.currentUser;await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,pw));for(const [c,f] of [['squads','creator'],['items','seller']]){const q=await getDocs(query(collection(db,c),where(f,'==',U.uid)));for(const d of q.docs)await deleteDoc(d.ref)}await deleteDoc(doc(db,'users',U.uid));await deleteUser(u);toast('Account deleted')}catch(e){toast(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'?'Wrong password.':'Could not delete. Try again.')}}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+const BT=Date.now(),endBoot=()=>setTimeout(()=>{booting=false;render()},Math.max(0,900-(Date.now()-BT)));
+const back=()=>{if(history.state&&history.state.v&&!MAIN.includes(history.state.v))history.back();else go('home')};
+window.addEventListener('popstate',e=>{if(!U)return;v=(e.state&&e.state.v)||'home';if(v!=='chat'&&unChat){unChat();unChat=null}if(['chat','prof','edit','sqd'].includes(v)&&!{chat:chatId,prof:pv,edit:editId,sqd:sd}[v])v='home';render();app.classList.remove('vin');void app.offsetWidth;app.classList.add('vin')});
+document.addEventListener('click',e=>{if(navigator.vibrate&&e.target.closest('.btn,.chip,.nav button,.fab'))navigator.vibrate(8)},true);
+const completion=()=>{const m=[[!!U.photo,'photo'],[!!U.about,'About me'],[(U.interests||[]).length>=3,'3+ interests']],done=40+m.filter(x=>x[0]).length*20;if(done>=100)return '';return `<div class="card"><div class="foot"><b>Profile ${done}% complete</b><a href="#" onclick="event.preventDefault();startEdit()">Complete</a></div><div class="bar"><i style="width:${done}%"></i></div><div class="meta">Add: ${m.filter(x=>!x[0]).map(x=>x[1]).join(', ')}</div></div>`};
+const DAYS=[[0,'Today'],[1,'Tomorrow'],['wk','Weekend'],['dt','Pick date']],TIMES=[['06:00','6 AM'],['07:00','7 AM'],['17:00','5 PM'],['18:00','6 PM'],['19:00','7 PM'],['20:00','8 PM']],PLACES=['Main ground','Library','Canteen','Hostel','Gym'];
+const CF0={act:'Cricket',title:'',day:0,d2:'',time:'18:00',place:'',need:5,aud:'both',desc:''};let cf={...CF0},sd=null;
+const ch=(on,fn,l)=>`<button type="button" class="chip ${on?'on':''}" onclick="${fn}">${l}</button>`;
+const setCf=(k,x)=>{cf[k]=x;render()},setCfq=(k,x)=>{cf[k]=x},stepN=d=>{cf.need=Math.min(50,Math.max(2,cf.need+d));render()};
+const cfTs=()=>{const d=new Date();if(cf.day==='wk')d.setDate(d.getDate()+(6-d.getDay()+7)%7);else if(cf.day==='dt'){if(!cf.d2)return NaN;const [y,m,dd]=cf.d2.split('-');d.setFullYear(+y,m-1,+dd)}else d.setDate(d.getDate()+cf.day);const [h,mi]=(cf.time||'18:00').split(':');d.setHours(+h,+mi,0,0);return d.getTime()};
+const showSq=id=>{sd=id;go('sqd')};
+function vSqd(){const s=sq(sd);if(!s)return '<div class="empty">This squad is no longer available.</div><button class="btn" onclick="back()">Back</button>';
+  const n=s.members.length,mem=s.members.includes(U.uid),rq=outR.find(r=>r.sid===s.id);let act;
+  if(mem)act=`<button class="btn" onclick="openChat('${s.id}')">Open chat</button>`;else if(rq)act=`<p class="tag" style="text-align:center">${rq.status==='pending'?'Request sent':rq.status==='accepted'?'You left':'Not accepted'}</p>`;else if(n>=s.need)act='<p class="tag" style="text-align:center">Squad full</p>';else act=`<button class="btn" onclick="join('${s.id}')">Ask to join</button>`;
+  return `<button class="btn sm ghost" onclick="back()">Back</button><div style="margin:16px 0"><div style="font-size:44px">${EMO[s.act]||''}</div><h1>${esc(s.title)}</h1><div class="meta">🕒 ${fmt(s.ts)}</div><div class="meta">📍 ${esc(s.place)}</div>${sb(s)}</div><p>${esc(s.desc)}</p><h2 style="margin-top:20px">Who's in (${n}/${s.need})</h2>${s.members.map((u,i)=>`<div class="sq-h" style="margin-bottom:10px"><i class="mav" style="width:38px;height:38px;font-size:16px;margin:0;background:${MC[i%4]}">${esc(((s.names||{})[u]||'?')[0].toUpperCase())}</i><div><div class="sq-t" style="font-size:15px">${esc((s.names||{})[u]||'Student')}</div><div class="meta">${u===s.creator?'Host':'Member'}</div></div></div>`).join('')}${act}<button class="btn ghost" onclick="shareSq('${s.id}')">Share on WhatsApp</button>`}
+function shareSq(id){const s=sq(id),t=`Join my squad on UniSide: ${s.title}, ${fmt(s.ts)} at ${s.place}. ${location.origin}`;try{if(navigator.share)navigator.share({title:'UniSide',text:t});else window.open('https://wa.me/?text='+encodeURIComponent(t))}catch(e){}}
+let sqL=false,itL=false,pL=false;
+const ic=p=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const IC={home:ic('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>'),market:ic('<path d="M6 7h12l1 13H5L6 7z"/><path d="M9 7a3 3 0 016 0"/>'),alerts:ic('<path d="M6 16v-5a6 6 0 0112 0v5l2 2H4l2-2z"/><path d="M10 21h4"/>'),profile:ic('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'),chat:ic('<path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/>')};
+const GC={Sports:'#2F5BFF',Creative:'#E0489B',Social:'#7CB518',Growth:'#F08A24'},MC=['#2F5BFF','#E0489B','#7CB518','#F08A24'];
+const grp=a=>Object.keys(GROUPS).find(g=>GROUPS[g].some(x=>x[0]===a));
+const SK='<div class="sk"></div>'.repeat(3),FAB='<button class="fab" onclick="go(\'create\')" aria-label="Create squad">+</button>';
 let booting=true,introI=0,pv=null,editId=null,spic='',meta={},metaUn={};
 const CONDS=['New','Like new','Good','Used'];
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
@@ -293,7 +323,7 @@ const unread=id=>{const m=meta[id];return !!(m&&m.u!==U.uid&&m.lm>seen(id))};
 const myChats=()=>{const a=squads.filter(s=>s.members.includes(U.uid)).map(s=>({id:s.id,t:s.title,sub:'Squad · '+s.members.length+' members'}));inR.concat(outR).filter(r=>r.kind==='dm'&&r.status==='accepted').forEach(r=>{const me=r.uid===U.uid,o=me?r.creator:r.uid;a.push({id:pair(o),t:(me?r.tname:r.name)||'Student',sub:'Connect',o})});return a};
 function syncMeta(){if(!U)return;myChats().forEach(c=>{if(metaUn[c.id])return;metaUn[c.id]=onSnapshot(doc(db,'meta',c.id),d=>{meta[c.id]=d.data();refresh()},()=>{})})}
 const chatDot=()=>myChats().some(c=>unread(c.id))?'<span class="dot" style="position:absolute;top:-4px;right:-4px;padding:4px"></span>':'';
-function vChats(){const c=myChats();return `<div class="top"><h1>My chats</h1><button class="btn sm ghost" onclick="go('home')">Back</button></div>`+(c.length?c.map(x=>`<div class="card" style="cursor:pointer" onclick="${x.o?`openDm('${x.o}','${esc(x.t).replace(/&#39;/g,'')}')`:`openChat('${x.id}')`}"><div class="foot"><div><div class="sq-t">${esc(x.t)}</div><div class="meta">${x.sub}</div></div>${unread(x.id)?'<span class="dot" style="padding:5px"></span>':''}</div></div>`).join(''):'<div class="empty">No chats yet.<br>Join a squad or connect with someone.<br><button class="btn" onclick="go(\'home\')">Find a squad</button></div>')}
+function vChats(){const c=myChats();return `<div class="top"><h1>My chats</h1><button class="btn sm ghost" onclick="back()">Back</button></div>`+(c.length?c.map(x=>`<div class="card" style="cursor:pointer" onclick="${x.o?`openDm('${x.o}','${esc(x.t).replace(/&#39;/g,'')}')`:`openChat('${x.id}')`}"><div class="foot"><div><div class="sq-t">${esc(x.t)}</div><div class="meta">${x.sub}</div></div>${unread(x.id)?'<span class="dot" style="padding:5px"></span>':''}</div></div>`).join(''):'<div class="empty">No chats yet.<br>Join a squad or connect with someone.<br><button class="btn" onclick="go(\'home\')">Find a squad</button></div>')}
 const INTRO=[['👥','Find your squad','Create or join plans for sports, study, movies and more at your campus.'],['🛍️','Connect and trade','Meet people with your interests and buy or sell books and gear.'],['🛡️','Stay safe','Meet in public places on campus, tell a friend, and use Report or Block anytime.']];
 function vIntro(){const [e,t,d]=INTRO[introI];return `<div style="text-align:center;padding-top:12vh"><div style="font-size:64px">${e}</div><h1>${t}</h1><p class="sub">${d}</p><div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">${INTRO.map((_,i)=>`<span style="width:8px;height:8px;border-radius:50%;background:${i===introI?'var(--blue)':'var(--line)'}"></span>`).join('')}</div><button class="btn" onclick="introNext()">${introI<2?'Next':'Get started'}</button>${introI<2?'<button class="btn ghost" style="border:0" onclick="introDone()">Skip</button>':''}</div>`}
 const introDone=()=>{ls.set('intro','1');introI=0;go('home')},introNext=()=>{introI<2?(introI++,render()):introDone()};
@@ -305,13 +335,13 @@ const sb=s=>{const mn=(s.ts-Date.now())/6e4,left=s.need-s.members.length,t=[];if
 function showProf(u){pv=people.find(p=>p.uid===u);go('prof')}
 function vProf(){const p=pv;if(!p)return '<div class="empty">Profile not found</div>';const r=inR.concat(outR).find(x=>x.id==='dm_'+pair(p.uid)),sh=shared(p);let act;
   if(r&&r.status==='accepted')act=`<button class="btn" onclick="openDm('${p.uid}')">Open chat</button>`;else if(r&&r.status==='pending')act=`<p class="tag" style="text-align:center">${r.uid===U.uid?'Request sent':'Wants to connect'}</p>`;else if(r)act='<p class="tag" style="text-align:center">Not accepted</p>';else act=`<button class="btn" onclick="connect('${p.uid}')">Connect</button>`;
-  return `<button class="btn sm ghost" onclick="go('home')">Back</button><div style="text-align:center;margin:18px 0"><div style="display:flex;justify-content:center"><div style="transform:scale(1.8);margin:18px">${avatar(p)}</div></div><h1>${esc(p.name)}</h1><div class="meta">${esc(p.college)} · ${esc(p.city)}</div>${p.about?`<p style="margin:14px 0 0">${esc(p.about)}</p>`:''}</div><h2>Interests${sh.length?' ('+sh.length+' in common)':''}</h2><div class="chips">${(p.interests||[]).map(i=>`<span class="chip ${U.interests.includes(i)?'on':''}">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div>${act}<p class="meta" style="text-align:center;margin-top:16px"><a href="#" onclick="event.preventDefault();report('user','${p.uid}')">Report</a> · <a href="#" onclick="event.preventDefault();blockUser('${p.uid}');go('home')">Block</a></p>`}
+  return `<button class="btn sm ghost" onclick="back()">Back</button><div style="text-align:center;margin:18px 0"><div style="display:flex;justify-content:center"><div style="transform:scale(1.8);margin:18px">${avatar(p)}</div></div><h1>${esc(p.name)}</h1><div class="meta">${esc(p.college)} · ${esc(p.city)}</div>${p.about?`<p style="margin:14px 0 0">${esc(p.about)}</p>`:''}</div><h2>Interests${sh.length?' ('+sh.length+' in common)':''}</h2><div class="chips">${(p.interests||[]).map(i=>`<span class="chip ${U.interests.includes(i)?'on':''}">${EMO[i]||''} ${esc(i)}</span>`).join('')}</div>${act}<p class="meta" style="text-align:center;margin-top:16px"><a href="#" onclick="event.preventDefault();report('user','${p.uid}')">Report</a> · <a href="#" onclick="event.preventDefault();blockUser('${p.uid}');back()">Block</a></p>`}
 const editSq=id=>{editId=id;go('edit')};
-function vEdit(){const s=sq(editId);if(!s)return '<div class="empty">Squad not found</div><button class="btn" onclick="go(\'home\')">Back</button>';return `<h1>Edit squad</h1><label>Title</label><input id="x-title" value="${esc(s.title)}"><label>Date and time</label><input id="x-when" type="datetime-local" value="${lt(s.ts)}" min="${lt(Date.now())}" max="${lt(Date.now()+7*D)}"><label>Place</label><input id="x-place" value="${esc(s.place)}"><label>People needed</label><input id="x-need" type="number" min="${s.members.length}" value="${s.need}"><label>Description</label><textarea id="x-desc">${esc(s.desc)}</textarea><div class="err" id="err"></div><button class="btn" onclick="saveSq()">Save</button><button class="btn ghost" onclick="go('home')">Cancel</button>`}
-async function saveSq(){const s=sq(editId),g=i=>document.getElementById(i).value.trim(),e=document.getElementById('err'),ts=new Date(g('x-when')).getTime(),need=parseInt(g('x-need'));if(!g('x-title')||!g('x-place')||!ts||!need||need<s.members.length){e.textContent='Check title, time, place and people needed.';return}if(ts<Date.now()||ts>Date.now()+7*D+H){e.textContent='Pick a time within the next 7 days.';return}try{await updateDoc(doc(db,'squads',editId),{title:g('x-title'),place:g('x-place'),ts,wk:wk(ts),need,desc:g('x-desc')||'No description added.'});go('home');toast('Saved')}catch(x){e.textContent='Could not save. Try again.'}}
+function vEdit(){const s=sq(editId);if(!s)return '<div class="empty">Squad not found</div><button class="btn" onclick="go(\'home\')">Back</button>';return `<h1>Edit squad</h1><label>Title</label><input id="x-title" value="${esc(s.title)}"><label>Date and time</label><input id="x-when" type="datetime-local" value="${lt(s.ts)}" min="${lt(Date.now())}" max="${lt(Date.now()+7*D)}"><label>Place</label><input id="x-place" value="${esc(s.place)}"><label>People needed</label><input id="x-need" type="number" min="${s.members.length}" value="${s.need}"><label>Description</label><textarea id="x-desc">${esc(s.desc)}</textarea><div class="err" id="err"></div><button class="btn" onclick="saveSq()">Save</button><button class="btn ghost" onclick="back()">Cancel</button>`}
+async function saveSq(){const s=sq(editId),g=i=>document.getElementById(i).value.trim(),e=document.getElementById('err'),ts=new Date(g('x-when')).getTime(),need=parseInt(g('x-need'));if(!g('x-title')||!g('x-place')||!ts||!need||need<s.members.length){e.textContent='Check title, time, place and people needed.';return}if(ts<Date.now()||ts>Date.now()+7*D+H){e.textContent='Pick a time within the next 7 days.';return}try{await updateDoc(doc(db,'squads',editId),{title:g('x-title'),place:g('x-place'),ts,wk:wk(ts),need,desc:g('x-desc')||'No description added.'});back();toast('Saved')}catch(x){e.textContent='Could not save. Try again.'}}
 async function cancelSq(id){if(!confirm('Cancel this squad for everyone?'))return;try{await deleteDoc(doc(db,'squads',id));toast('Squad cancelled')}catch(e){toast('Could not cancel.')}}
 async function leaveSq(id){const s=sq(id);if(!s||!confirm('Leave this squad?'))return;try{await updateDoc(doc(db,'squads',id),{members:s.members.filter(x=>x!==U.uid),['names.'+U.uid]:deleteField()});toast('You left the squad')}catch(e){toast('Could not leave.')}}
 function itemPhoto(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,360/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);spic=c.toDataURL('image/jpeg',.5);const p=document.getElementById('s-prev');p.src=spic;p.style.display='block'};im.src=r.result};r.readAsDataURL(f)}
-Object.assign(window,{showProf,editSq,saveSq,cancelSq,leaveSq,itemPhoto,tp,introNext,introDone,report,blockUser,unblockAll,feedback,invite,installApp,resetPw,delAcc,toast,setAt,setPhoto,saveProfile,startEdit,cancelEdit,togEdit,loadPeople,setHome,setPOnly,connect,openDm,sell,sold,delItem,setCat,go,togI,pic,signup,login,setTab,setOnly,join,create,decide,openChat,closeChat,send,togMine,logout,render,draft});
+Object.assign(window,{back,showSq,shareSq,setCf,setCfq,stepN,showProf,editSq,saveSq,cancelSq,leaveSq,itemPhoto,tp,introNext,introDone,report,blockUser,unblockAll,feedback,invite,installApp,resetPw,delAcc,toast,setAt,setPhoto,saveProfile,startEdit,cancelEdit,togEdit,loadPeople,setHome,setPOnly,connect,openDm,sell,sold,delItem,setCat,go,togI,pic,signup,login,setTab,setOnly,join,create,decide,openChat,closeChat,send,togMine,logout,render,draft});
 render();
 </script></body></html>
